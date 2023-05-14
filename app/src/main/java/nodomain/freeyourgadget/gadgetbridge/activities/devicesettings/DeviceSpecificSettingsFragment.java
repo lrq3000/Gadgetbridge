@@ -628,6 +628,8 @@ public class DeviceSpecificSettingsFragment extends AbstractPreferenceFragment i
         addPreferenceHandlerFor(PREF_HEARTRATE_AUTOMATIC_ENABLE);
         addPreferenceHandlerFor(PREF_SPO_AUTOMATIC_ENABLE);
 
+        addPreferenceHandlerFor(PREF_BICYCLE_SENSOR_PERSISTENCE_INTERVAL);
+
         addPreferenceHandlerFor("lock");
 
         String sleepTimeState = prefs.getString(PREF_SLEEP_TIME, PREF_DO_NOT_DISTURB_OFF);
