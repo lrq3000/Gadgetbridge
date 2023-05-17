@@ -2775,4 +2775,5 @@
     <string name="pref_dashboard_widget_today_hr_interval_title">Heart rate interval</string>
     <string name="pref_dashboard_widget_today_hr_interval_summary">The amount of minutes the chart shows \'worn\' after each successful heart rate measurement</string>
     <string name="device_name_bicycle_sensor">Bicycle sensor</string>
+    <string name="device_name_cycling_sensor">Cycling sensor</string>
 </resources>

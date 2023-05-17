@@ -129,7 +129,7 @@ public class GBDaoGenerator {
         addWorldClocks(schema, user, device);
         addContacts(schema, user, device);
         addAppSpecificNotificationSettings(schema, device);
-        addBicycleSensorActivitySample(schema, user, device);
+        addCyclingSensorActivitySample(schema, user, device);
 
         Entity notificationFilter = addNotificationFilters(schema);
 
@@ -625,14 +625,14 @@ public class GBDaoGenerator {
         return activitySample;
     }
 
-    private static Entity addBicycleSensorActivitySample(Schema schema, Entity user, Entity device){
-        Entity activitySample = addEntity(schema, "BicycleSensorActivitySample");
+    private static Entity addCyclingSensorActivitySample(Schema schema, Entity user, Entity device){
+        Entity activitySample = addEntity(schema, "CyclingSensorActivitySample");
         activitySample.implementsSerializable();
 
         addCommonActivitySampleProperties("AbstractActivitySample", activitySample, user, device);
 
         activitySample.addIntProperty("RevolutionCount");
-        activitySample.addIntProperty(SAMPLE_STEPS).notNull().codeBeforeGetterAndSetter(OVERRIDE);
+        activitySample.addFloatProperty("Speed");
         return activitySample;
     }
 
