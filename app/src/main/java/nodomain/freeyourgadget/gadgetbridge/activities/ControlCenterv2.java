@@ -20,69 +20,27 @@
 package nodomain.freeyourgadget.gadgetbridge.activities;
 
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.ACTION_CONNECT;
-import static nodomain.freeyourgadget.gadgetbridge.util.GB.toast;
 
-import android.Manifest;
-import android.annotation.TargetApi;
-import android.app.Dialog;
-import android.app.NotificationManager;
-import android.content.ActivityNotFoundException;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.content.res.Resources;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.provider.Settings;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
-import android.util.TypedValue;
-import android.view.MenuItem;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.ColorInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.ActionBarDrawerToggle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.view.menu.MenuItemImpl;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.fragment.app.DialogFragment;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 
-import nodomain.freeyourgadget.gadgetbridge.BuildConfig;
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.discovery.DiscoveryActivityV2;
@@ -93,9 +51,6 @@ import nodomain.freeyourgadget.gadgetbridge.devices.DeviceCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.DeviceManager;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.DailyTotals;
-import nodomain.freeyourgadget.gadgetbridge.model.DeviceService;
-import nodomain.freeyourgadget.gadgetbridge.util.AndroidUtils;
-import nodomain.freeyourgadget.gadgetbridge.util.GBChangeLog;
 import nodomain.freeyourgadget.gadgetbridge.util.DeviceHelper;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
 
@@ -178,7 +133,7 @@ public class ControlCenterv2 extends Fragment {
         refreshPairedDevices();
 
         if (GB.isBluetoothEnabled() && deviceList.isEmpty() && Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            startActivity(new Intent(getActivity(), DiscoveryActivity.class));
+            startActivity(new Intent(getActivity(), DiscoveryActivityV2.class));
         } else {
             GBApplication.deviceService().requestDeviceInfo();
         }
@@ -187,7 +142,7 @@ public class ControlCenterv2 extends Fragment {
     }
 
     private void launchDiscoveryActivity() {
-        startActivity(new Intent(getActivity(), DiscoveryActivity.class));
+        startActivity(new Intent(getActivity(), DiscoveryActivityV2.class));
     }
 
     private void showFabIfNeccessary() {
@@ -216,8 +171,10 @@ public class ControlCenterv2 extends Fragment {
     }
 
     public void refreshPairedDevices() {
-        mGBDeviceAdapter.notifyDataSetChanged();
-        mGBDeviceAdapter.rebuildFolders();
+        if (mGBDeviceAdapter != null) {
+            mGBDeviceAdapter.notifyDataSetChanged();
+            mGBDeviceAdapter.rebuildFolders();
+        }
     }
 
     public RefreshTask createRefreshTask(String task, Context context) {
@@ -228,7 +185,7 @@ public class ControlCenterv2 extends Fragment {
         if(ACTION_CONNECT.equals(intent.getAction())) {
             String btDeviceAddress = intent.getStringExtra("device");
             if(btDeviceAddress!=null){
-                GBDevice candidate = DeviceHelper.getInstance().findAvailableDevice(btDeviceAddress, this);
+                GBDevice candidate = DeviceHelper.getInstance().findAvailableDevice(btDeviceAddress, getActivity());
                 if (candidate != null && !candidate.isConnected()) {
                     GBApplication.deviceService(candidate).connect();
                 }

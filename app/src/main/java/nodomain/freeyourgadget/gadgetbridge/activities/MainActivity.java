@@ -19,7 +19,6 @@ package nodomain.freeyourgadget.gadgetbridge.activities;
 
 import android.Manifest;
 import android.annotation.TargetApi;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
@@ -31,6 +30,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.view.MenuItem;
@@ -48,7 +48,10 @@ import androidx.fragment.app.DialogFragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.color.DynamicColors;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -66,18 +69,24 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.DeviceService;
 import nodomain.freeyourgadget.gadgetbridge.util.AndroidUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
+import nodomain.freeyourgadget.gadgetbridge.util.GBChangeLog;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 public class MainActivity extends AbstractGBActivity implements BottomNavigationView.OnNavigationItemSelectedListener, GBActivity {
+    private static final Logger LOG = LoggerFactory.getLogger(MainActivity.class);
     public static final String ACTION_REQUEST_PERMISSIONS
             = "nodomain.freeyourgadget.gadgetbridge.activities.controlcenter.requestpermissions";
+    public static final String ACTION_REQUEST_LOCATION_PERMISSIONS
+            = "nodomain.freeyourgadget.gadgetbridge.activities.controlcenter.requestlocationpermissions";
     private boolean isLanguageInvalid = false;
+    private boolean isThemeInvalid = false;
     private static PhoneStateListener fakeStateListener;
 
-    BottomNavigationView bottomNavigationView;
-    DashboardFragment dashboardFragment = new DashboardFragment();
-    ControlCenterv2 devicesFragment = new ControlCenterv2();
-    MainMenuFragment mainMenuFragment = new MainMenuFragment();
+    private BottomNavigationView bottomNavigationView;
+    private int activeFragment;
+    private DashboardFragment dashboardFragment = new DashboardFragment();
+    private ControlCenterv2 devicesFragment = new ControlCenterv2();
+    private MainMenuFragment mainMenuFragment = new MainMenuFragment();
 
     //needed for KK compatibility
     static {
@@ -92,22 +101,26 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
                 case GBApplication.ACTION_LANGUAGE_CHANGE:
                     setLanguage(GBApplication.getLanguage(), true);
                     break;
+                case GBApplication.ACTION_THEME_CHANGE:
+                    isThemeInvalid = true;
+                    break;
                 case GBApplication.ACTION_QUIT:
                     finish();
                     break;
                 case DeviceManager.ACTION_DEVICES_CHANGED:
                 case GBApplication.ACTION_NEW_DATA:
-                    if (devicesFragment.isResumed()) {
-                        devicesFragment.createRefreshTask("get activity data", getApplication()).execute();
-//                        mGBDeviceAdapter.rebuildFolders();
-                        devicesFragment.refreshPairedDevices();
-                    }
+                    devicesFragment.createRefreshTask("get activity data", getApplication()).execute();
+//                    mGBDeviceAdapter.rebuildFolders();
+                    devicesFragment.refreshPairedDevices();
                     break;
                 case DeviceService.ACTION_REALTIME_SAMPLES:
                     handleRealtimeSample(intent.getSerializableExtra(DeviceService.EXTRA_REALTIME_SAMPLE));
                     break;
                 case ACTION_REQUEST_PERMISSIONS:
-                    checkAndRequestPermissions(false);
+                    checkAndRequestPermissions();
+                    break;
+                case ACTION_REQUEST_LOCATION_PERMISSIONS:
+                    checkAndRequestLocationPermissions();
                     break;
             }
         }
@@ -139,21 +152,22 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        DynamicColors.applyToActivitiesIfAvailable(getApplication());
         setContentView(R.layout.activity_main);
 
         bottomNavigationView = findViewById(R.id.bottom_nav_bar);
         bottomNavigationView.setOnNavigationItemSelectedListener(this);
-        // TODO: read last view from savedInstanceState
         bottomNavigationView.setSelectedItemId(R.id.bottom_nav_dashboard);
+        activeFragment = R.id.bottom_nav_dashboard;
 
         IntentFilter filterLocal = new IntentFilter();
         filterLocal.addAction(GBApplication.ACTION_LANGUAGE_CHANGE);
+        filterLocal.addAction(GBApplication.ACTION_THEME_CHANGE);
         filterLocal.addAction(GBApplication.ACTION_QUIT);
         filterLocal.addAction(GBApplication.ACTION_NEW_DATA);
         filterLocal.addAction(DeviceManager.ACTION_DEVICES_CHANGED);
         filterLocal.addAction(DeviceService.ACTION_REALTIME_SAMPLES);
         filterLocal.addAction(ACTION_REQUEST_PERMISSIONS);
+        filterLocal.addAction(ACTION_REQUEST_LOCATION_PERMISSIONS);
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, filterLocal);
 
         /*
@@ -162,15 +176,26 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
         Prefs prefs = GBApplication.getPrefs();
         pesterWithPermissions = prefs.getBoolean("permission_pestering", true);
 
+        boolean displayPermissionDialog = !prefs.getBoolean("permission_dialog_displayed", false);
+        prefs.getPreferences().edit().putBoolean("permission_dialog_displayed", true).apply();
+
+
         Set<String> set = NotificationManagerCompat.getEnabledListenerPackages(this);
         if (pesterWithPermissions) {
             if (!set.contains(this.getPackageName())) { // If notification listener access hasn't been granted
                 // Put up a dialog explaining why we need permissions (Polite, but also Play Store policy)
                 // When accepted, we open the Activity for Notification access
-                DialogFragment dialog = new MainActivity.NotifyListenerPermissionsDialogFragment();
+                DialogFragment dialog = new NotifyListenerPermissionsDialogFragment();
                 dialog.show(getSupportFragmentManager(), "NotifyListenerPermissionsDialogFragment");
             }
         }
+
+        /* We not put up dialogs explaining why we need permissions (Polite, but also Play Store policy).
+
+           Rather than chaining the calls, we just open a bunch of dialogs. Last in this list = first
+           on the page, and as they are accepted the permissions are requested in turn.
+
+           When accepted, we request it or open the Activity for permission to display over other apps. */
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
            /* In order to be able to set ringer mode to silent in GB's PhoneCallReceiver
@@ -180,34 +205,72 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
                 if (!((NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE)).isNotificationPolicyAccessGranted()) {
                     // Put up a dialog explaining why we need permissions (Polite, but also Play Store policy)
                     // When accepted, we open the Activity for Notification access
-                    DialogFragment dialog = new MainActivity.NotifyPolicyPermissionsDialogFragment();
+                    DialogFragment dialog = new NotifyPolicyPermissionsDialogFragment();
                     dialog.show(getSupportFragmentManager(), "NotifyPolicyPermissionsDialogFragment");
                 }
             }
 
-            if (!android.provider.Settings.canDrawOverlays(getApplicationContext())) {
+            if (!Settings.canDrawOverlays(getApplicationContext())) {
                 // If diplay over other apps access hasn't been granted
                 // Put up a dialog explaining why we need permissions (Polite, but also Play Store policy)
                 // When accepted, we open the Activity for permission to display over other apps.
                 if (pesterWithPermissions) {
-                    DialogFragment dialog = new MainActivity.DisplayOverOthersPermissionsDialogFragment();
+                    DialogFragment dialog = new DisplayOverOthersPermissionsDialogFragment();
                     dialog.show(getSupportFragmentManager(), "DisplayOverOthersPermissionsDialogFragment");
                 }
             }
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_DENIED) {
+                if (pesterWithPermissions) {
+                    DialogFragment dialog = new LocationPermissionsDialogFragment();
+                    dialog.show(getSupportFragmentManager(), "LocationPermissionsDialogFragment");
+                }
+            }
+
             // Check all the other permissions that we need to for Android M + later
-            checkAndRequestPermissions(true);
+            if (getWantedPermissions().isEmpty())
+                displayPermissionDialog = false;
+            if (displayPermissionDialog && pesterWithPermissions) {
+                DialogFragment dialog = new PermissionsDialogFragment();
+                dialog.show(getSupportFragmentManager(), "PermissionsDialogFragment");
+                // when 'ok' clicked, checkAndRequestPermissions() is called
+            } else
+                checkAndRequestPermissions();
+        }
+
+        GBChangeLog cl = GBChangeLog.createChangeLog(this);
+        boolean showChangelog = prefs.getBoolean("show_changelog", true);
+        if (showChangelog && cl.isFirstRun() && cl.hasChanges(cl.isFirstRunEver())) {
+            try {
+                cl.getMaterialLogDialog().show();
+            } catch (Exception ignored) {
+                GB.toast(this, "Error showing Changelog", Toast.LENGTH_LONG, GB.ERROR);
+            }
         }
     }
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putInt("activeFragment", activeFragment); // Save variables into the Bundle
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        activeFragment = savedInstanceState.getInt("activeFragment"); // Retrieve variables from the Bundle
+    }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (isLanguageInvalid) {
+        if (isLanguageInvalid || isThemeInvalid) {
             isLanguageInvalid = false;
+            isThemeInvalid = false;
             recreate();
         }
+        updateFragment();
     }
 
     @Override
@@ -218,36 +281,45 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
 
     @Override
     public boolean
-    onNavigationItemSelected(@NonNull MenuItem item)
-    {
-        // TODO: save current view so we can restore it in onCreate()
-        switch (item.getItemId()) {
+    onNavigationItemSelected(@NonNull MenuItem item) {
+        activeFragment = item.getItemId();
+        updateFragment();
+        return true;
+    }
+
+    private void updateFragment() {
+        switch (activeFragment) {
             case R.id.bottom_nav_dashboard:
                 getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.fragment_container, dashboardFragment)
                         .commit();
-                return true;
-
+                break;
             case R.id.bottom_nav_devices:
                 getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.fragment_container, devicesFragment)
                         .commit();
-                return true;
-
+                break;
             case R.id.bottom_nav_menu:
                 getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.fragment_container, mainMenuFragment)
                         .commit();
-                return true;
+                break;
         }
-        return false;
+    }
+
+    private void checkAndRequestLocationPermissions() {
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            LOG.error("No permission to access background location!");
+            GB.toast(getString(R.string.error_no_location_access), Toast.LENGTH_SHORT, GB.ERROR);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 0);
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    private void checkAndRequestPermissions(boolean showDialogFirst) {
+    private List<String> getWantedPermissions() {
         List<String> wantedPermissions = new ArrayList<>();
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_DENIED)
@@ -297,6 +369,9 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
             if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_DENIED) {
                 wantedPermissions.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
             }
+            if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
+                wantedPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -314,11 +389,24 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
             }
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_DENIED) {
+                wantedPermissions.add(Manifest.permission.POST_NOTIFICATIONS);
+            }
+        }
+
         if (BuildConfig.INTERNET_ACCESS) {
             if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.INTERNET) == PackageManager.PERMISSION_DENIED) {
                 wantedPermissions.add(Manifest.permission.INTERNET);
             }
         }
+
+        return wantedPermissions;
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private void checkAndRequestPermissions() {
+        List<String> wantedPermissions = getWantedPermissions();
 
         if (!wantedPermissions.isEmpty()) {
             Prefs prefs = GBApplication.getPrefs();
@@ -335,25 +423,17 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
                     }
                 }
                 wantedPermissions.removeAll(shouldNotAsk);
-            } else if (!showDialogFirst) {
+            } else {
                 // Permissions have not been asked yet, but now will be
                 prefs.getPreferences().edit().putBoolean("permissions_asked", true).apply();
             }
 
             if (!wantedPermissions.isEmpty()) {
-                if (showDialogFirst) {
-                    // Show a dialog - this will then call checkAndRequestPermissions(false)
-                    DialogFragment dialog = new LocationPermissionsDialogFragment();
-                    dialog.show(getSupportFragmentManager(), "LocationPermissionsDialogFragment");
-                    //requestMultiplePermissionsLauncher.launch(wantedPermissions.toArray(new String[0]));
+                GB.toast(this, getString(R.string.permission_granting_mandatory), Toast.LENGTH_LONG, GB.ERROR);
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                    ActivityCompat.requestPermissions(this, wantedPermissions.toArray(new String[0]), 0);
                 } else {
-                    GB.toast(this, getString(R.string.permission_granting_mandatory), Toast.LENGTH_LONG, GB.ERROR);
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                        ActivityCompat.requestPermissions(this, wantedPermissions.toArray(new String[0]), 0);
-                    } else {
-                        requestMultiplePermissionsLauncher.launch(wantedPermissions.toArray(new String[0]));
-                        //ActivityCompat.requestPermissions(this, wantedPermissions.toArray(new String[0]), 0); //Actually this still works if I test it, not sure if the new way is more reliable or not...
-                    }
+                    requestMultiplePermissionsLauncher.launch(wantedPermissions.toArray(new String[0]));
                 }
             }
         }
@@ -376,13 +456,12 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
         AndroidUtils.setLanguage(this, language);
     }
 
-
     /// Called from onCreate - this puts up a dialog explaining we need permissions, and goes to the correct Activity
     public static class NotifyPolicyPermissionsDialogFragment extends DialogFragment {
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             // Use the Builder class for convenient dialog construction
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getActivity());
             final Context context = getContext();
             builder.setMessage(context.getString(R.string.permission_notification_policy_access,
                             getContext().getString(R.string.app_name),
@@ -406,7 +485,7 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             // Use the Builder class for convenient dialog construction
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getActivity());
             final Context context = getContext();
             builder.setMessage(context.getString(R.string.permission_notification_listener,
                             getContext().getString(R.string.app_name),
@@ -429,7 +508,7 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             // Use the Builder class for convenient dialog construction
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getActivity());
             Context context = getContext();
             builder.setMessage(context.getString(R.string.permission_display_over_other_apps,
                             getContext().getString(R.string.app_name),
@@ -448,21 +527,19 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
     }
 
 
-    /// Called from checkAndRequestPermissions - this puts up a dialog explaining we need permissions, and then calls checkAndRequestPermissions (via an intent) when 'ok' pressed
+    /// Called from onCreate - this puts up a dialog explaining we need backgound location permissions, and then requests permissions when 'ok' pressed
     public static class LocationPermissionsDialogFragment extends DialogFragment {
-        ControlCenterv2 controlCenter;
-
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             // Use the Builder class for convenient dialog construction
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getActivity());
             Context context = getContext();
             builder.setMessage(context.getString(R.string.permission_location,
                             getContext().getString(R.string.app_name),
                             getContext().getString(R.string.ok)))
                     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int id) {
-                            Intent intent = new Intent(ACTION_REQUEST_PERMISSIONS);
+                            Intent intent = new Intent(ACTION_REQUEST_LOCATION_PERMISSIONS);
                             LocalBroadcastManager.getInstance(getContext()).sendBroadcast(intent);
                         }
                     });
@@ -473,6 +550,8 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
     // Register the permissions callback, which handles the user's response to the
     // system permissions dialog. Save the return value, an instance of
     // ActivityResultLauncher, as an instance variable.
+    // This is required here rather than where it is used because it'll cause a
+    // "LifecycleOwners must call register before they are STARTED" if not called from onCreate
     public ActivityResultLauncher<String[]> requestMultiplePermissionsLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), isGranted -> {
                 if (isGranted.containsValue(true)) {
@@ -487,4 +566,24 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
                     GB.toast(this, getString(R.string.permission_granting_mandatory), Toast.LENGTH_LONG, GB.ERROR);
                 }
             });
+
+    /// Called from onCreate - this puts up a dialog explaining we need permissions, and then requests permissions when 'ok' pressed
+    public static class PermissionsDialogFragment extends DialogFragment {
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            // Use the Builder class for convenient dialog construction
+            MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(getActivity());
+            Context context = getContext();
+            builder.setMessage(context.getString(R.string.permission_request,
+                            getContext().getString(R.string.app_name),
+                            getContext().getString(R.string.ok)))
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            Intent intent = new Intent(ACTION_REQUEST_PERMISSIONS);
+                            LocalBroadcastManager.getInstance(getContext()).sendBroadcast(intent);
+                        }
+                    });
+            return builder.create();
+        }
+    }
 }

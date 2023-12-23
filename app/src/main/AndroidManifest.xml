@@ -600,11 +600,11 @@
         <activity
             android:name=".activities.ConfigureContacts"
             android:label="@string/title_activity_set_contacts"
-            android:parentActivityName=".activities.ControlCenterv2" />
+            android:parentActivityName=".activities.MainActivity" />
         <activity
             android:name=".activities.widgets.WidgetScreensListActivity"
             android:label="@string/menuitem_widgets"
-            android:parentActivityName=".activities.ControlCenterv2" />
+            android:parentActivityName=".activities.MainActivity" />
         <activity
             android:name=".activities.ConfigureWorldClocks"
             android:label="@string/pref_world_clocks_title"

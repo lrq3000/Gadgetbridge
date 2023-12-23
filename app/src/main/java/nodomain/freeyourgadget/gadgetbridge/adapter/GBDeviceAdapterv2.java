@@ -1437,7 +1437,7 @@ public class GBDeviceAdapterv2 extends ListAdapter<GBDevice, GBDeviceAdapterv2.V
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     void createDynamicShortcut(GBDevice device) {
-        Intent intent = new Intent(context, ControlCenterv2.class)
+        Intent intent = new Intent(context, MainActivity.class)
                 .setAction(ACTION_CONNECT)
                 .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 .putExtra("device", device.getAddress());

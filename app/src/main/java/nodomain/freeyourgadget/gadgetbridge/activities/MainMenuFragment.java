@@ -15,12 +15,12 @@ import androidx.fragment.app.Fragment;
 
 import com.google.android.material.navigation.NavigationView;
 
-import de.cketti.library.changelog.ChangeLog;
 import nodomain.freeyourgadget.gadgetbridge.BuildConfig;
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.util.AndroidUtils;
+import nodomain.freeyourgadget.gadgetbridge.activities.discovery.DiscoveryActivityV2;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
+import nodomain.freeyourgadget.gadgetbridge.util.GBChangeLog;
 
 public class MainMenuFragment extends Fragment implements NavigationView.OnNavigationItemSelectedListener {
     public static final int MENU_REFRESH_CODE = 1;
@@ -76,11 +76,15 @@ public class MainMenuFragment extends Fragment implements NavigationView.OnNavig
                 startActivity(i);
                 return false;
             case R.id.external_changelog:
-                ChangeLog cl = createChangeLog();
+                GBChangeLog cl = GBChangeLog.createChangeLog(getActivity());
                 try {
-                    cl.getLogDialog().show();
+                    if (cl.hasChanges(false)) {
+                        cl.getMaterialLogDialog().show();
+                    } else {
+                        cl.getMaterialFullLogDialog().show();
+                    }
                 } catch (Exception ignored) {
-                    GB.toast(getActivity().getBaseContext(), "Error showing Changelog", Toast.LENGTH_LONG, GB.ERROR);
+                    GB.toast(getActivity(), "Error showing Changelog", Toast.LENGTH_LONG, GB.ERROR);
                 }
                 return false;
             case R.id.about:
@@ -92,16 +96,7 @@ public class MainMenuFragment extends Fragment implements NavigationView.OnNavig
         return false;
     }
 
-    private ChangeLog createChangeLog() {
-        String css = ChangeLog.DEFAULT_CSS;
-        css += "body { "
-                + "color: " + AndroidUtils.getTextColorHex(getActivity().getBaseContext()) + "; "
-                + "background-color: " + AndroidUtils.getBackgroundColorHex(getActivity().getBaseContext()) + ";" +
-                "}";
-        return new ChangeLog(getContext(), css);
-    }
-
     private void launchDiscoveryActivity() {
-        startActivity(new Intent(getActivity(), DiscoveryActivity.class));
+        startActivity(new Intent(getActivity(), DiscoveryActivityV2.class));
     }
 }
