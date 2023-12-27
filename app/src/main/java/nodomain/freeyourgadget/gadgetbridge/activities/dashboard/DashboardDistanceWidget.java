@@ -24,14 +24,28 @@ import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.List;
+
+import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
+import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
+import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
+import nodomain.freeyourgadget.gadgetbridge.model.DailyTotals;
+import nodomain.freeyourgadget.gadgetbridge.util.FormatUtils;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link DashboardDistanceWidget#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class DashboardDistanceWidget extends Fragment {
+public class DashboardDistanceWidget extends AbstractDashboardWidget {
+    private static final Logger LOG = LoggerFactory.getLogger(DashboardDistanceWidget.class);
 
     public DashboardDistanceWidget() {
         // Required empty public constructor
@@ -41,8 +55,23 @@ public class DashboardDistanceWidget extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_distance, container, false);
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        long totalSteps = 0;
+        try (DBHandler dbHandler = GBApplication.acquireDB()) {
+            for (GBDevice dev : devices) {
+                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalSteps += getSteps(dev, dbHandler);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not calculate total amount of steps: ", e);
+        }
+        ActivityUser activityUser = new ActivityUser();
+        int stepLength = activityUser.getStepLengthCm();
+        double distanceMeters = totalSteps * stepLength * 0.01;
+        String distanceFormatted = FormatUtils.getFormattedDistanceLabel(distanceMeters);
         TextView distance = fragmentView.findViewById(R.id.distance);
-        distance.setText("2700m");
+        distance.setText(distanceFormatted);
         return fragmentView;
     }
 }

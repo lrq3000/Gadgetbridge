@@ -24,14 +24,23 @@ import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
+import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
+import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link DashboardStepsWidget#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class DashboardStepsWidget extends Fragment {
+public class DashboardStepsWidget extends AbstractDashboardWidget {
+    private static final Logger LOG = LoggerFactory.getLogger(DashboardStepsWidget.class);
 
     public DashboardStepsWidget() {
         // Required empty public constructor
@@ -41,8 +50,19 @@ public class DashboardStepsWidget extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_steps, container, false);
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        long totalSteps = 0;
+        try (DBHandler dbHandler = GBApplication.acquireDB()) {
+            for (GBDevice dev : devices) {
+                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalSteps += getSteps(dev, dbHandler);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not calculate total amount of steps: ", e);
+        }
         TextView stepsCount = fragmentView.findViewById(R.id.steps_count);
-        stepsCount.setText("5500");
+        stepsCount.setText(String.valueOf(totalSteps));
         return fragmentView;
     }
 }

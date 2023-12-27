@@ -24,14 +24,26 @@ import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Calendar;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
+import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
+import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link DashboardActiveTimeWidget#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class DashboardActiveTimeWidget extends Fragment {
+public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
+    private static final Logger LOG = LoggerFactory.getLogger(DashboardActiveTimeWidget.class);
 
     public DashboardActiveTimeWidget() {
         // Required empty public constructor
@@ -41,8 +53,25 @@ public class DashboardActiveTimeWidget extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_active_time, container, false);
+        Calendar day = Calendar.getInstance();
+        day.set(Calendar.HOUR_OF_DAY, 23);
+        day.set(Calendar.MINUTE, 59);
+        day.set(Calendar.SECOND, 59);
+        int timeTo = (int) (day.getTimeInMillis() / 1000);
+        int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        long totalActiveMinutes = 0;
+        try (DBHandler dbHandler = GBApplication.acquireDB()) {
+            for (GBDevice dev : devices) {
+                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalActiveMinutes += getActiveMinutes(dev, dbHandler, timeFrom, timeTo);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not calculate total amount of sleep: ", e);
+        }
         TextView activeTime = fragmentView.findViewById(R.id.active_time);
-        activeTime.setText("1h 15min");
+        activeTime.setText(DateTimeUtils.formatDurationHoursMinutes(totalActiveMinutes, TimeUnit.MINUTES));
         return fragmentView;
     }
 }

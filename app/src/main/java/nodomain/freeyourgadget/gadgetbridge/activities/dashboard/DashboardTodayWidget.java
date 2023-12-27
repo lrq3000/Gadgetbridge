@@ -32,17 +32,30 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.activities.charts.StepAnalysis;
+import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
+import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
+import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
+import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
+import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link DashboardTodayWidget#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class DashboardTodayWidget extends Fragment {
+public class DashboardTodayWidget extends AbstractDashboardWidget {
+    private static final Logger LOG = LoggerFactory.getLogger(DashboardTodayWidget.class);
 
     public DashboardTodayWidget() {
         // Required empty public constructor
@@ -53,6 +66,7 @@ public class DashboardTodayWidget extends Fragment {
                              Bundle savedInstanceState) {
         View todayView = inflater.inflate(R.layout.dashboard_widget_today, container, false);
 
+        // Initialize chart
         PieChart chart = todayView.findViewById(R.id.dashboard_piechart_today);
         chart.getDescription().setEnabled(false);
         chart.setDrawHoleEnabled(true);
@@ -61,55 +75,72 @@ public class DashboardTodayWidget extends Fragment {
         chart.setRotationEnabled(false);
         chart.setDrawEntryLabels(false);
 
+        // Initialize legend
         Legend l = chart.getLegend();
         l.setTextColor(GBApplication.getTextColor(getContext()));
         ArrayList<LegendEntry> legendEntries = new ArrayList<>();
-        legendEntries.add(new LegendEntry("Deep sleep", Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 255)));
-        legendEntries.add(new LegendEntry("Light sleep", Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(150, 150, 255)));
-        legendEntries.add(new LegendEntry("Inactive", Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(200, 200, 200)));
-        legendEntries.add(new LegendEntry("Active", Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 255, 0)));
+        legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_deep_sleep), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 255)));
+        legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_light_sleep), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(150, 150, 255)));
+        legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_activity), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 255, 0)));
+        legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_not_worn), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 0)));
         l.setCustom(legendEntries);
 
+        // Retrieve activity sessions
+        Calendar day = Calendar.getInstance();
+        day.set(Calendar.HOUR_OF_DAY, 23);
+        day.set(Calendar.MINUTE, 59);
+        day.set(Calendar.SECOND, 59);
+        int timeTo = (int) (day.getTimeInMillis() / 1000);
+        int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        List<ActivitySession> stepSessions = new ArrayList<>();
+        try (DBHandler dbHandler = GBApplication.acquireDB()) {
+            for (GBDevice dev : devices) {
+                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    ActivitySession stepSessionsSummary = new ActivitySession();
+                    List<? extends ActivitySample> activitySamples = getAllSamples(dbHandler, dev, timeFrom, timeTo);
+                    StepAnalysis stepAnalysis = new StepAnalysis();
+                    if (activitySamples != null) {
+                        stepSessions.addAll(stepAnalysis.calculateStepSessions(activitySamples));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not calculate total amount of sleep: ", e);
+        }
+        Collections.sort(stepSessions, (o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
+
+        // Add pie slice entries
         ArrayList<PieEntry> entries = new ArrayList<>();
         ArrayList<Integer> colors = new ArrayList<>();
+        long secondIndex = timeFrom;
+        for (ActivitySession session : stepSessions) {
+            // Calculate start and end seconds
+            long startSec = session.getStartTime().getTime() / 1000;
+            long endSec = session.getEndTime().getTime() / 1000;
+            // Skip earlier sessions
+            if (startSec < secondIndex) continue;
+            // Draw inactive slice
+            entries.add(new PieEntry(startSec - secondIndex, "Inactive"));
+            colors.add(Color.rgb(128, 128, 128));
+            // Draw activity slice
+            entries.add(new PieEntry(endSec - startSec, "Active"));
+            colors.add(Color.rgb(0, 255, 0));
+            secondIndex = endSec;
+        }
+        // Fill with inactive slice up until current time
+        entries.add(new PieEntry(Calendar.getInstance().getTimeInMillis() / 1000 - secondIndex, "Inactive"));
+        colors.add(Color.rgb(128, 128, 128));
+        // Draw transparent slice for remaining time until midnight
+        entries.add(new PieEntry(timeTo - Calendar.getInstance().getTimeInMillis() / 1000, ""));
+        colors.add(Color.argb(0, 0, 0, 0));
 
-        entries.add(new PieEntry(120, "Deep sleep"));
-        colors.add(Color.rgb(0, 0, 255));
-        entries.add(new PieEntry(120, "Light sleep"));
-        colors.add(Color.rgb(150, 150, 255));
-        entries.add(new PieEntry(60, "Deep sleep"));
-        colors.add(Color.rgb(0, 0, 255));
-        entries.add(new PieEntry(120, "Light sleep"));
-        colors.add(Color.rgb(150, 150, 255));
-        entries.add(new PieEntry(180, "Inactive"));
-        colors.add(Color.rgb(200, 200, 200));
-        entries.add(new PieEntry(60, "Active"));
-        colors.add(Color.rgb(0, 255, 0));
-        entries.add(new PieEntry(60, "Inactive"));
-        colors.add(Color.rgb(200, 200, 200));
-        entries.add(new PieEntry(30, "Active"));
-        colors.add(Color.rgb(0, 255, 0));
-        entries.add(new PieEntry(150, "Inactive"));
-        colors.add(Color.rgb(200, 200, 200));
-        entries.add(new PieEntry(60, "Active"));
-        colors.add(Color.rgb(0, 255, 0));
-        entries.add(new PieEntry(60, "Inactive"));
-        colors.add(Color.rgb(200, 200, 200));
-        entries.add(new PieEntry(90, "Active"));
-        colors.add(Color.rgb(0, 255, 0));
-        entries.add(new PieEntry(150, "Inactive"));
-        colors.add(Color.rgb(200, 200, 200));
-        entries.add(new PieEntry(120, "Light sleep"));
-        colors.add(Color.rgb(150, 150, 255));
-        entries.add(new PieEntry(60, "Deep sleep"));
-        colors.add(Color.rgb(0, 0, 255));
-
+        // Draw chart
         PieDataSet dataSet = new PieDataSet(entries, "Today");
         dataSet.setSliceSpace(0f);
         dataSet.setSelectionShift(5f);
         dataSet.setDrawValues(false);
         dataSet.setColors(colors);
-
         PieData data = new PieData(dataSet);
         chart.setData(data);
 

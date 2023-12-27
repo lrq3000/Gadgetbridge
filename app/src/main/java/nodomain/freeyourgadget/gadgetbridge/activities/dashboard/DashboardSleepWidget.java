@@ -24,14 +24,25 @@ import android.widget.TextView;
 
 import androidx.fragment.app.Fragment;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
+import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
+import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 
 /**
  * A simple {@link Fragment} subclass.
  * Use the {@link DashboardSleepWidget#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class DashboardSleepWidget extends Fragment {
+public class DashboardSleepWidget extends AbstractDashboardWidget {
+    private static final Logger LOG = LoggerFactory.getLogger(DashboardSleepWidget.class);
 
     public DashboardSleepWidget() {
         // Required empty public constructor
@@ -41,8 +52,19 @@ public class DashboardSleepWidget extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_sleep, container, false);
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        long totalSleepMinutes = 0;
+        try (DBHandler dbHandler = GBApplication.acquireDB()) {
+            for (GBDevice dev : devices) {
+                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalSleepMinutes += getSleep(dev, dbHandler);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not calculate total amount of sleep: ", e);
+        }
         TextView sleepAmount = fragmentView.findViewById(R.id.sleep_amount);
-        sleepAmount.setText("7h 35min");
+        sleepAmount.setText(DateTimeUtils.formatDurationHoursMinutes(totalSleepMinutes, TimeUnit.MINUTES));
         return fragmentView;
     }
 }
