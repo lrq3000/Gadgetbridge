@@ -23,8 +23,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import androidx.fragment.app.Fragment;
-
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.LegendEntry;
@@ -47,10 +45,9 @@ import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
-import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 
 /**
- * A simple {@link Fragment} subclass.
+ * A simple {@link AbstractDashboardWidget} subclass.
  * Use the {@link DashboardTodayWidget#newInstance} factory method to
  * create an instance of this fragment.
  */
@@ -59,6 +56,23 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
 
     public DashboardTodayWidget() {
         // Required empty public constructor
+    }
+
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     *
+     * @param timeFrom Start time in seconds since Unix epoch.
+     * @param timeTo End time in seconds since Unix epoch.
+     * @return A new instance of fragment DashboardTodayWidget.
+     */
+    public static DashboardTodayWidget newInstance(int timeFrom, int timeTo) {
+        DashboardTodayWidget fragment = new DashboardTodayWidget();
+        Bundle args = new Bundle();
+        args.putInt(ARG_TIME_FROM, timeFrom);
+        args.putInt(ARG_TIME_TO, timeTo);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
@@ -82,16 +96,9 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_deep_sleep), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 255)));
         legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_light_sleep), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(150, 150, 255)));
         legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_activity), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 255, 0)));
-        legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_not_worn), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 0)));
+        legendEntries.add(new LegendEntry(getContext().getString(R.string.abstract_chart_fragment_kind_not_worn), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 0)));
         l.setCustom(legendEntries);
 
-        // Retrieve activity sessions
-        Calendar day = Calendar.getInstance();
-        day.set(Calendar.HOUR_OF_DAY, 23);
-        day.set(Calendar.MINUTE, 59);
-        day.set(Calendar.SECOND, 59);
-        int timeTo = (int) (day.getTimeInMillis() / 1000);
-        int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         List<ActivitySession> stepSessions = new ArrayList<>();
         try (DBHandler dbHandler = GBApplication.acquireDB()) {

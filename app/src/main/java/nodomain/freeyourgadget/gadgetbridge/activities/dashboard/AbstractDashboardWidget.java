@@ -16,6 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
+import android.os.Bundle;
+
 import androidx.fragment.app.Fragment;
 
 import java.util.Calendar;
@@ -33,6 +35,21 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
 import nodomain.freeyourgadget.gadgetbridge.model.DailyTotals;
 
 public abstract class AbstractDashboardWidget extends Fragment {
+    protected static String ARG_TIME_FROM = "dashboard_widget_argument_time_from";
+    protected static String ARG_TIME_TO = "dashboard_widget_argument_time_to";
+
+    protected int timeFrom;
+    protected int timeTo;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            timeFrom = getArguments().getInt(ARG_TIME_FROM);
+            timeTo = getArguments().getInt(ARG_TIME_TO);
+        }
+    }
+
     protected long getSteps(GBDevice device, DBHandler db) {
         Calendar day = GregorianCalendar.getInstance();
         DailyTotals ds = new DailyTotals();

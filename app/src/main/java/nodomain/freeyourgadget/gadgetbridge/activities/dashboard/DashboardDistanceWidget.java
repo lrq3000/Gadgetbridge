@@ -22,13 +22,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.fragment.app.Fragment;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.List;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
@@ -36,11 +32,10 @@ import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
-import nodomain.freeyourgadget.gadgetbridge.model.DailyTotals;
 import nodomain.freeyourgadget.gadgetbridge.util.FormatUtils;
 
 /**
- * A simple {@link Fragment} subclass.
+ * A simple {@link AbstractDashboardWidget} subclass.
  * Use the {@link DashboardDistanceWidget#newInstance} factory method to
  * create an instance of this fragment.
  */
@@ -49,6 +44,23 @@ public class DashboardDistanceWidget extends AbstractDashboardWidget {
 
     public DashboardDistanceWidget() {
         // Required empty public constructor
+    }
+
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     *
+     * @param timeFrom Start time in seconds since Unix epoch.
+     * @param timeTo End time in seconds since Unix epoch.
+     * @return A new instance of fragment DashboardDistanceWidget.
+     */
+    public static DashboardDistanceWidget newInstance(int timeFrom, int timeTo) {
+        DashboardDistanceWidget fragment = new DashboardDistanceWidget();
+        Bundle args = new Bundle();
+        args.putInt(ARG_TIME_FROM, timeFrom);
+        args.putInt(ARG_TIME_TO, timeTo);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override

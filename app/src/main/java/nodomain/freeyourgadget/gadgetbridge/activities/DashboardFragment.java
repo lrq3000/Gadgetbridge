@@ -26,12 +26,15 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import java.util.Calendar;
+
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardActiveTimeWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardDistanceWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardSleepWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardStepsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardTodayWidget;
+import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 
 public class DashboardFragment extends Fragment {
 
@@ -41,25 +44,32 @@ public class DashboardFragment extends Fragment {
         View dashboardView = inflater.inflate(R.layout.fragment_dashboard, container, false);
         setHasOptionsMenu(true);
 
+        Calendar day = Calendar.getInstance();
+        day.set(Calendar.HOUR_OF_DAY, 23);
+        day.set(Calendar.MINUTE, 59);
+        day.set(Calendar.SECOND, 59);
+        int timeTo = (int) (day.getTimeInMillis() / 1000);
+        int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
+
         getActivity().getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_today, new DashboardTodayWidget())
+                .replace(R.id.fragment_today, DashboardTodayWidget.newInstance(timeFrom, timeTo))
                 .commit();
         getActivity().getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_steps, new DashboardStepsWidget())
+                .replace(R.id.fragment_steps, DashboardStepsWidget.newInstance(timeFrom, timeTo))
                 .commit();
         getActivity().getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_distance, new DashboardDistanceWidget())
+                .replace(R.id.fragment_distance, DashboardDistanceWidget.newInstance(timeFrom, timeTo))
                 .commit();
         getActivity().getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_active_time, new DashboardActiveTimeWidget())
+                .replace(R.id.fragment_active_time, DashboardActiveTimeWidget.newInstance(timeFrom, timeTo))
                 .commit();
         getActivity().getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment_sleep, new DashboardSleepWidget())
+                .replace(R.id.fragment_sleep, DashboardSleepWidget.newInstance(timeFrom, timeTo))
                 .commit();
 
         return dashboardView;

@@ -22,8 +22,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import androidx.fragment.app.Fragment;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +33,7 @@ import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 
 /**
- * A simple {@link Fragment} subclass.
+ * A simple {@link AbstractDashboardWidget} subclass.
  * Use the {@link DashboardStepsWidget#newInstance} factory method to
  * create an instance of this fragment.
  */
@@ -44,6 +42,23 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
 
     public DashboardStepsWidget() {
         // Required empty public constructor
+    }
+
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     *
+     * @param timeFrom Start time in seconds since Unix epoch.
+     * @param timeTo End time in seconds since Unix epoch.
+     * @return A new instance of fragment DashboardStepsWidget.
+     */
+    public static DashboardStepsWidget newInstance(int timeFrom, int timeTo) {
+        DashboardStepsWidget fragment = new DashboardStepsWidget();
+        Bundle args = new Bundle();
+        args.putInt(ARG_TIME_FROM, timeFrom);
+        args.putInt(ARG_TIME_TO, timeTo);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
