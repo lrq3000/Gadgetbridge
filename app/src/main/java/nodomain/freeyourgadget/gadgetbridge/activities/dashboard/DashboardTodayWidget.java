@@ -40,9 +40,13 @@ import java.util.List;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.activities.charts.ActivityAnalysis;
+import nodomain.freeyourgadget.gadgetbridge.activities.charts.SleepAnalysis;
 import nodomain.freeyourgadget.gadgetbridge.activities.charts.StepAnalysis;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
+import nodomain.freeyourgadget.gadgetbridge.model.ActivityAmount;
+import nodomain.freeyourgadget.gadgetbridge.model.ActivityKind;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
 
@@ -99,45 +103,99 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         legendEntries.add(new LegendEntry(getContext().getString(R.string.abstract_chart_fragment_kind_not_worn), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 0)));
         l.setCustom(legendEntries);
 
+        // Retrieve activity data
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        List<ActivityAmount> activitySessions = new ArrayList<>();
         List<ActivitySession> stepSessions = new ArrayList<>();
+        List<SleepAnalysis.SleepSession> sleepSessions = new ArrayList<>();
         try (DBHandler dbHandler = GBApplication.acquireDB()) {
             for (GBDevice dev : devices) {
                 if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                    ActivitySession stepSessionsSummary = new ActivitySession();
                     List<? extends ActivitySample> activitySamples = getAllSamples(dbHandler, dev, timeFrom, timeTo);
+                    ActivityAnalysis activityAnalysis = new ActivityAnalysis();
                     StepAnalysis stepAnalysis = new StepAnalysis();
+                    SleepAnalysis sleepAnalysis = new SleepAnalysis();
                     if (activitySamples != null) {
+                        activitySessions.addAll(activityAnalysis.calculateActivityAmounts(activitySamples).getAmounts());
                         stepSessions.addAll(stepAnalysis.calculateStepSessions(activitySamples));
+                        sleepSessions.addAll(sleepAnalysis.calculateSleepSessions(activitySamples));
                     }
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Could not calculate total amount of sleep: ", e);
+            LOG.warn("Could not retrieve activity amounts: ", e);
         }
-        Collections.sort(stepSessions, (o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
+
+        // Integrate and chronologically order various data from multiple devices
+        List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
+        for (ActivityAmount session : activitySessions) {
+            if (session.getActivityKind() == ActivityKind.TYPE_ACTIVITY) continue;
+            generalizedActivities.add(new GeneralizedActivity(
+                    session.getActivityKind(),
+                    session.getStartDate().getTime() / 1000,
+                    session.getEndDate().getTime() / 1000,
+                    session,
+                    null,
+                    null
+            ));
+        }
+        for (ActivitySession session : stepSessions) {
+            generalizedActivities.add(new GeneralizedActivity(
+                    session.getActivityKind(),
+                    session.getStartTime().getTime() / 1000,
+                    session.getEndTime().getTime() / 1000,
+                    null,
+                    session,
+                    null
+            ));
+        }
+        for (SleepAnalysis.SleepSession session : sleepSessions) {
+            generalizedActivities.add(new GeneralizedActivity(
+                    ActivityKind.TYPE_SLEEP,
+                    session.getSleepStart().getTime() / 1000,
+                    session.getSleepEnd().getTime() / 1000,
+                    null,
+                    null,
+                    session
+            ));
+        }
+        Collections.sort(generalizedActivities, (o1, o2) -> (int) (o1.timeFrom - o2.timeFrom));
 
         // Add pie slice entries
         ArrayList<PieEntry> entries = new ArrayList<>();
         ArrayList<Integer> colors = new ArrayList<>();
         long secondIndex = timeFrom;
-        for (ActivitySession session : stepSessions) {
-            // Calculate start and end seconds
-            long startSec = session.getStartTime().getTime() / 1000;
-            long endSec = session.getEndTime().getTime() / 1000;
+        for (GeneralizedActivity session : generalizedActivities) {
+            // FIXME: correctly merge parallel activities from multiple devices
             // Skip earlier sessions
-            if (startSec < secondIndex) continue;
+            if (session.timeFrom < secondIndex) continue;
             // Draw inactive slice
-            entries.add(new PieEntry(startSec - secondIndex, "Inactive"));
-            colors.add(Color.rgb(128, 128, 128));
-            // Draw activity slice
-            entries.add(new PieEntry(endSec - startSec, "Active"));
-            colors.add(Color.rgb(0, 255, 0));
-            secondIndex = endSec;
+            if (session.timeFrom > secondIndex) {
+                entries.add(new PieEntry(session.timeFrom - secondIndex, "Inactive"));
+                colors.add(Color.rgb(128, 128, 128));
+            }
+            // Draw activity slices
+            if (session.activityKind == ActivityKind.TYPE_NOT_WORN) {
+                entries.add(new PieEntry(session.timeTo - session.timeFrom, "Not worn"));
+                colors.add(Color.rgb(0, 0, 0));
+                secondIndex = session.timeTo;
+            } else if (session.activityKind == ActivityKind.TYPE_LIGHT_SLEEP || session.activityKind == ActivityKind.TYPE_SLEEP) {
+                entries.add(new PieEntry(session.timeTo - session.timeFrom, "Light sleep"));
+                colors.add(Color.rgb(150, 150, 255));
+                secondIndex = session.timeTo;
+            } else if (session.activityKind == ActivityKind.TYPE_DEEP_SLEEP) {
+                entries.add(new PieEntry(session.timeTo - session.timeFrom, "Deep sleep"));
+                colors.add(Color.rgb(0, 0, 255));
+                secondIndex = session.timeTo;
+            } else {
+                entries.add(new PieEntry(session.timeTo - session.timeFrom, "Active"));
+                colors.add(Color.rgb(0, 255, 0));
+                secondIndex = session.timeTo;
+            }
         }
-        // Fill with inactive slice up until current time
-        entries.add(new PieEntry(Calendar.getInstance().getTimeInMillis() / 1000 - secondIndex, "Inactive"));
-        colors.add(Color.rgb(128, 128, 128));
+        // Fill with unknown slice up until current time
+        entries.add(new PieEntry(Calendar.getInstance().getTimeInMillis() / 1000 - secondIndex, "Unknown"));
+        colors.add(Color.rgb(80, 80, 80));
         // Draw transparent slice for remaining time until midnight
         entries.add(new PieEntry(timeTo - Calendar.getInstance().getTimeInMillis() / 1000, ""));
         colors.add(Color.argb(0, 0, 0, 0));
@@ -152,5 +210,23 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         chart.setData(data);
 
         return todayView;
+    }
+
+    private class GeneralizedActivity {
+        public int activityKind;
+        public long timeFrom;
+        public long timeTo;
+        public ActivityAmount activityAmount;
+        public ActivitySession activitySession;
+        public SleepAnalysis.SleepSession sleepSession;
+
+        private GeneralizedActivity(int activityKind, long timeFrom, long timeTo, ActivityAmount activityAmount, ActivitySession activitySession, SleepAnalysis.SleepSession sleepSession) {
+            this.activityKind = activityKind;
+            this.timeFrom = timeFrom;
+            this.timeTo = timeTo;
+            this.activityAmount = activityAmount;
+            this.activitySession = activitySession;
+            this.sleepSession = sleepSession;
+        }
     }
 }
