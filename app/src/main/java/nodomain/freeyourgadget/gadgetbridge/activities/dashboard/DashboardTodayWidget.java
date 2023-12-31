@@ -182,12 +182,15 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 secondIndex = activity.timeTo;
             }
         }
-        // Fill with unknown slice up until current time
-        entries.add(new PieEntry(Calendar.getInstance().getTimeInMillis() / 1000 - secondIndex, "Unknown"));
-        colors.add(Color.rgb(128, 128, 128));
-        // Draw transparent slice for remaining time until midnight
-        entries.add(new PieEntry(timeTo - Calendar.getInstance().getTimeInMillis() / 1000, ""));
-        colors.add(Color.argb(0, 0, 0, 0));
+        // Fill remaining time until midnight
+        if (Calendar.getInstance().getTimeInMillis() / 1000 > timeFrom && Calendar.getInstance().getTimeInMillis() / 1000 < timeTo) {
+            // Fill with unknown slice up until current time
+            entries.add(new PieEntry(Calendar.getInstance().getTimeInMillis() / 1000 - secondIndex, "Unknown"));
+            colors.add(Color.rgb(128, 128, 128));
+            // Draw transparent slice for remaining time until midnight
+            entries.add(new PieEntry(timeTo - Calendar.getInstance().getTimeInMillis() / 1000, ""));
+            colors.add(Color.argb(0, 0, 0, 0));
+        }
 
         // Draw chart
         PieDataSet dataSet = new PieDataSet(entries, "Today");

@@ -21,7 +21,6 @@ import android.text.format.DateUtils;
 
 import com.github.pfichtner.durationformatter.DurationFormatter;
 
-import java.io.IOException;
 import java.text.FieldPosition;
 import java.text.ParseException;
 import java.text.ParsePosition;
@@ -225,4 +224,16 @@ public class DateTimeUtils {
         return (int) TimeUnit.MILLISECONDS.toDays((time2 - time1) * 1000L);
     }
 
+    /**
+     * Determine whether two Calendar instances are on the same day
+     *
+     * @param calendar1 The first calendar to compare
+     * @param calendar2 The second calendar to compare
+     * @return true if the Calendar instances are on the same day
+     */
+    public static boolean isSameDay(Calendar calendar1, Calendar calendar2) {
+        return calendar1.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR)
+                && calendar1.get(Calendar.MONTH) == calendar2.get(Calendar.MONTH)
+                && calendar1.get(Calendar.DAY_OF_MONTH) == calendar2.get(Calendar.DAY_OF_MONTH);
+    }
 }

@@ -22,11 +22,13 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardActiveTimeWidget;
@@ -37,19 +39,57 @@ import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardTodayW
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 
 public class DashboardFragment extends Fragment {
+    private Calendar day = GregorianCalendar.getInstance();
+    private TextView textViewDate;
+    private TextView arrowLeft;
+    private TextView arrowRight;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
         View dashboardView = inflater.inflate(R.layout.fragment_dashboard, container, false);
         setHasOptionsMenu(true);
+        textViewDate = dashboardView.findViewById(R.id.dashboard_date);
 
-        Calendar day = Calendar.getInstance();
+        arrowLeft = dashboardView.findViewById(R.id.arrow_left);
+        arrowLeft.setOnClickListener(v -> {
+            day.add(Calendar.DAY_OF_MONTH, -1);
+            refresh();
+        });
+        arrowRight = dashboardView.findViewById(R.id.arrow_right);
+        arrowRight.setOnClickListener(v -> {
+            Calendar today = GregorianCalendar.getInstance();
+            if (!DateTimeUtils.isSameDay(today, day)) {
+                day.add(Calendar.DAY_OF_MONTH, 1);
+                refresh();
+            }
+        });
+
+        refresh();
+
+        return dashboardView;
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        inflater.inflate(R.menu.dashboard_menu, menu);
+    }
+
+    private void refresh() {
         day.set(Calendar.HOUR_OF_DAY, 23);
         day.set(Calendar.MINUTE, 59);
         day.set(Calendar.SECOND, 59);
         int timeTo = (int) (day.getTimeInMillis() / 1000);
         int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
+
+        Calendar today = GregorianCalendar.getInstance();
+        if (DateTimeUtils.isSameDay(today, day)) {
+            textViewDate.setText(getContext().getString(R.string.activity_summary_today));
+            arrowRight.setAlpha(0.5f);
+        } else {
+            textViewDate.setText(DateTimeUtils.formatDate(day.getTime()));
+            arrowRight.setAlpha(1);
+        }
 
         getActivity().getSupportFragmentManager()
                 .beginTransaction()
@@ -71,12 +111,5 @@ public class DashboardFragment extends Fragment {
                 .beginTransaction()
                 .replace(R.id.fragment_sleep, DashboardSleepWidget.newInstance(timeFrom, timeTo))
                 .commit();
-
-        return dashboardView;
-    }
-
-    @Override
-    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        inflater.inflate(R.menu.dashboard_menu, menu);
     }
 }

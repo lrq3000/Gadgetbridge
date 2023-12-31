@@ -20,6 +20,9 @@ import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -35,6 +38,8 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
 import nodomain.freeyourgadget.gadgetbridge.model.DailyTotals;
 
 public abstract class AbstractDashboardWidget extends Fragment {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractDashboardWidget.class);
+
     protected static String ARG_TIME_FROM = "dashboard_widget_argument_time_from";
     protected static String ARG_TIME_TO = "dashboard_widget_argument_time_to";
 
@@ -52,12 +57,14 @@ public abstract class AbstractDashboardWidget extends Fragment {
 
     protected long getSteps(GBDevice device, DBHandler db) {
         Calendar day = GregorianCalendar.getInstance();
+        day.setTimeInMillis(timeTo * 1000L);
         DailyTotals ds = new DailyTotals();
         return ds.getDailyTotalsForDevice(device, day, db)[0];
     }
 
     protected long getSleep(GBDevice device, DBHandler db) {
         Calendar day = GregorianCalendar.getInstance();
+        day.setTimeInMillis(timeTo * 1000L);
         DailyTotals ds = new DailyTotals();
         return ds.getDailyTotalsForDevice(device, day, db)[1];
     }
