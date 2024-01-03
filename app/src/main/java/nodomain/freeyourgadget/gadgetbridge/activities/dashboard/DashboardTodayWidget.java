@@ -131,6 +131,14 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
         for (ActivitySample sample : allActivitySamples) {
             if (sample.getKind() != ActivityKind.TYPE_NOT_WORN) continue;
+            if (generalizedActivities.size() > 0) {
+                GeneralizedActivity previous = generalizedActivities.get(generalizedActivities.size() - 1);
+                if (previous.activityKind == ActivityKind.TYPE_NOT_WORN && previous.timeTo > sample.getTimestamp() - 60) {
+                    // If the current sample starts within a minute after the end of the previous not worn session, merge them
+                    generalizedActivities.get(generalizedActivities.size() - 1).timeTo = sample.getTimestamp() + 60;
+                    continue;
+                }
+            }
             generalizedActivities.add(new GeneralizedActivity(
                     sample.getKind(),
                     sample.getTimestamp(),
