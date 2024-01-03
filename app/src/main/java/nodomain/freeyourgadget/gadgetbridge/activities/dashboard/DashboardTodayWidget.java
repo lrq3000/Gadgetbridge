@@ -17,15 +17,17 @@
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
 import android.graphics.Color;
-import android.graphics.DashPathEffect;
 import android.os.Bundle;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import com.github.mikephil.charting.charts.PieChart;
-import com.github.mikephil.charting.components.Legend;
-import com.github.mikephil.charting.components.LegendEntry;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
@@ -85,6 +87,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         // Initialize chart
         PieChart chart = todayView.findViewById(R.id.dashboard_piechart_today);
         chart.getDescription().setEnabled(false);
+        chart.getLegend().setEnabled(false);
         chart.setDrawHoleEnabled(true);
         chart.setHoleColor(Color.argb(0,0,0,0));
         chart.setHoleRadius(80f);
@@ -95,15 +98,17 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         chart.setHighlightPerTapEnabled(false);
 
         // Initialize legend
-        Legend l = chart.getLegend();
-        l.setTextColor(GBApplication.getTextColor(getContext()));
-        ArrayList<LegendEntry> legendEntries = new ArrayList<>();
-        legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_deep_sleep), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 255)));
-        legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_light_sleep), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(150, 150, 255)));
-        legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_activity), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 255, 0)));
-        legendEntries.add(new LegendEntry(getContext().getString(R.string.abstract_chart_fragment_kind_not_worn), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 0)));
-        l.setCustom(legendEntries);
-        l.setEnabled(false);
+        TextView legend = todayView.findViewById(R.id.dashboard_piechart_legend);
+        SpannableString l_not_worn = new SpannableString("■ " + getString(R.string.abstract_chart_fragment_kind_not_worn));
+        l_not_worn.setSpan(new ForegroundColorSpan(Color.rgb(0, 0, 0)), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        SpannableString l_activity = new SpannableString("■ " + getString(R.string.activity_type_activity));
+        l_activity.setSpan(new ForegroundColorSpan(Color.rgb(0, 255, 0)), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        SpannableString l_deep_sleep = new SpannableString("■ " + getString(R.string.activity_type_deep_sleep));
+        l_deep_sleep.setSpan(new ForegroundColorSpan(Color.rgb(0, 0, 255)), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        SpannableString l_light_sleep = new SpannableString("■ " + getString(R.string.activity_type_light_sleep));
+        l_light_sleep.setSpan(new ForegroundColorSpan(Color.rgb(150, 150, 255)), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
+        legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_activity).append(" ").append(l_light_sleep).append(" ").append(l_deep_sleep));
 
         // Retrieve activity data
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
