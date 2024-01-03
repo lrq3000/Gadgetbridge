@@ -88,8 +88,11 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         chart.setDrawHoleEnabled(true);
         chart.setHoleColor(Color.argb(0,0,0,0));
         chart.setHoleRadius(80f);
+        chart.setTransparentCircleRadius(81);
+        chart.setTransparentCircleColor(GBApplication.getTextColor(getContext()));
         chart.setRotationEnabled(false);
         chart.setDrawEntryLabels(false);
+        chart.setHighlightPerTapEnabled(false);
 
         // Initialize legend
         Legend l = chart.getLegend();
@@ -100,6 +103,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         legendEntries.add(new LegendEntry(getContext().getString(R.string.activity_type_activity), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 255, 0)));
         legendEntries.add(new LegendEntry(getContext().getString(R.string.abstract_chart_fragment_kind_not_worn), Legend.LegendForm.SQUARE, 10f, 10f, new DashPathEffect(new float[]{10f, 5f}, 0f), Color.rgb(0, 0, 0)));
         l.setCustom(legendEntries);
+        l.setEnabled(false);
 
         // Retrieve activity data
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
@@ -200,6 +204,28 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         dataSet.setColors(colors);
         PieData data = new PieData(dataSet);
         chart.setData(data);
+
+        // Initialize scale chart
+        PieChart scale = todayView.findViewById(R.id.dashboard_piechart_scale);
+        scale.getDescription().setEnabled(false);
+        scale.getLegend().setEnabled(false);
+        scale.setDrawHoleEnabled(true);
+        scale.setHoleColor(Color.argb(0,0,0,0));
+        scale.setHoleRadius(99f);
+        scale.setRotationEnabled(false);
+        scale.setHighlightPerTapEnabled(false);
+        scale.setRotationAngle(278f);
+        scale.setEntryLabelColor(GBApplication.getTextColor(getContext()));
+        ArrayList<PieEntry> scaleEntries = new ArrayList<>();
+        for (int i = 1; i <= 24; i++) {
+            scaleEntries.add(new PieEntry(1, String.valueOf(i)));
+        }
+        PieDataSet scaleDataSet = new PieDataSet(scaleEntries, "Time scale");
+        scaleDataSet.setSliceSpace(0f);
+        scaleDataSet.setDrawValues(false);
+        scaleDataSet.setColor(Color.argb(0,0,0,0));
+        PieData scaleData = new PieData(scaleDataSet);
+        scale.setData(scaleData);
 
         return todayView;
     }

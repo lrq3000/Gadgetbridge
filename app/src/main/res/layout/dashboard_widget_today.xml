@@ -6,12 +6,23 @@
     android:layout_height="match_parent"
     tools:context=".activities.dashboard.DashboardTodayWidget">
 
-    <com.github.mikephil.charting.charts.PieChart
-        android:id="@+id/dashboard_piechart_today"
-        android:layout_height="wrap_content"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:minHeight="300dp">
-    </com.github.mikephil.charting.charts.PieChart>
+        android:layout_height="wrap_content">
 
+        <com.github.mikephil.charting.charts.PieChart
+            android:id="@+id/dashboard_piechart_today"
+            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_centerInParent="true"
+            android:minHeight="300dp" />
+        <com.github.mikephil.charting.charts.PieChart
+            android:id="@+id/dashboard_piechart_scale"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:minWidth="225dp"
+            android:minHeight="225dp"
+            android:layout_centerInParent="true" />
 
+    </RelativeLayout>
 </FrameLayout>
