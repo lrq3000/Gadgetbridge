@@ -108,7 +108,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         SpannableString l_light_sleep = new SpannableString("■ " + getString(R.string.activity_type_light_sleep));
         l_light_sleep.setSpan(new ForegroundColorSpan(Color.rgb(150, 150, 255)), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
-        legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_activity).append(" ").append(l_light_sleep).append(" ").append(l_deep_sleep));
+        legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_activity).append("\n").append(l_light_sleep).append(" ").append(l_deep_sleep));
 
         // Retrieve activity data
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
