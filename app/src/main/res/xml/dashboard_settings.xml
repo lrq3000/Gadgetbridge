@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:iconSpaceReserved="false">
+
+    <PreferenceCategory
+        android:key="pref_key_dashboard_widgets"
+        android:title="@string/pref_header_general"
+        app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="dashboard_cards_enabled"
+            android:layout="@layout/preference_checkbox"
+            android:title="Show widgets on cards"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="pref_key_dashboard_widgets"
+        android:title="Widget settings"
+        app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="dashboard_widget_today_enabled"
+            android:layout="@layout/preference_checkbox"
+            android:title="Activity chart"
+            app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="dashboard_widget_goals_enabled"
+            android:layout="@layout/preference_checkbox"
+            android:title="Goals chart"
+            android:enabled="false"
+            app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="dashboard_widget_steps_enabled"
+            android:layout="@layout/preference_checkbox"
+            android:title="@string/steps"
+            app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="dashboard_widget_distance_enabled"
+            android:layout="@layout/preference_checkbox"
+            android:title="@string/distance"
+            app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="dashboard_widget_active_time_enabled"
+            android:layout="@layout/preference_checkbox"
+            android:title="@string/active_time"
+            app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="dashboard_widget_sleep_enabled"
+            android:layout="@layout/preference_checkbox"
+            android:title="@string/menuitem_sleep"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:key="pref_key_dashboard_devices"
+        android:title="Devices to include"
+        app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="dashboard_devices_all"
+            android:layout="@layout/preference_checkbox"
+            android:title="All devices"
+            android:enabled="false"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+</PreferenceScreen>

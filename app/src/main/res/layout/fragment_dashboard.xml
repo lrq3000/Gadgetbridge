@@ -8,14 +8,6 @@
     android:layout_height="match_parent"
     tools:context=".activities.DashboardFragment">
 
-    <ImageView
-        android:id="@+id/no_items_bg"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:alpha="0.1"
-        app:srcCompat="@drawable/gadgetbridge_img" />
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -57,93 +49,12 @@
                     android:layout_alignParentEnd="true"/>
             </RelativeLayout>
 
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                card_view:cardCornerRadius="4dp"
-                card_view:cardElevation="4dp"
-                card_view:contentPadding="4dp">
-
-                <androidx.fragment.app.FragmentContainerView
-                    android:id="@+id/fragment_today"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-
-            </com.google.android.material.card.MaterialCardView>
-
             <androidx.gridlayout.widget.GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:id="@+id/dashboard_gridlayout"
                 app:columnCount="2">
 
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    card_view:cardCornerRadius="4dp"
-                    card_view:cardElevation="4dp"
-                    card_view:contentPadding="4dp"
-                    app:layout_columnWeight="1"
-                    app:layout_gravity="fill">
-
-                    <androidx.fragment.app.FragmentContainerView
-                        android:id="@+id/fragment_steps"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    card_view:cardCornerRadius="4dp"
-                    card_view:cardElevation="4dp"
-                    card_view:contentPadding="4dp"
-                    app:layout_columnWeight="1"
-                    app:layout_gravity="fill">
-
-                    <androidx.fragment.app.FragmentContainerView
-                        android:id="@+id/fragment_distance"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    card_view:cardCornerRadius="4dp"
-                    card_view:cardElevation="4dp"
-                    card_view:contentPadding="4dp"
-                    app:layout_columnWeight="1"
-                    app:layout_gravity="fill">
-
-                    <androidx.fragment.app.FragmentContainerView
-                        android:id="@+id/fragment_active_time"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.card.MaterialCardView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_margin="8dp"
-                    card_view:cardCornerRadius="4dp"
-                    card_view:cardElevation="4dp"
-                    card_view:contentPadding="4dp"
-                    app:layout_columnWeight="1"
-                    app:layout_gravity="fill">
-
-                    <androidx.fragment.app.FragmentContainerView
-                        android:id="@+id/fragment_sleep"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
-                </com.google.android.material.card.MaterialCardView>
             </androidx.gridlayout.widget.GridLayout>
         </LinearLayout>
     </ScrollView>

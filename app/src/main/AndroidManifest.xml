@@ -848,6 +848,12 @@
             android:name=".externalevents.opentracks.OpenTracksController"
             android:label="OpenTracks controller and intent receiver"
             android:exported="true"/>
+
+        <activity
+            android:name=".activities.dashboard.DashboardSettingsActivity"
+            android:parentActivityName=".activities.MainActivity"
+            android:label="@string/dashboard_settings"
+            android:excludeFromRecents="true" />
     </application>
 
 </manifest>
