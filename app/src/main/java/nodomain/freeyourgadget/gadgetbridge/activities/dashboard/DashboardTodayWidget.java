@@ -80,8 +80,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View todayView = inflater.inflate(R.layout.dashboard_widget_today, container, false);
 
         // Initialize chart

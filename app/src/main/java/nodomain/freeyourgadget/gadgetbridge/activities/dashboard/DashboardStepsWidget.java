@@ -16,10 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.slf4j.Logger;
@@ -31,6 +33,7 @@ import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
+import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -62,11 +65,14 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_steps, container, false);
+        TextView stepsCount = fragmentView.findViewById(R.id.steps_count);
+        ImageView stepsGauge = fragmentView.findViewById(R.id.steps_gauge);
+
+        // Update text representation
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
-        long totalSteps = 0;
+        int totalSteps = 0;
         try (DBHandler dbHandler = GBApplication.acquireDB()) {
             for (GBDevice dev : devices) {
                 if (dev.getDeviceCoordinator().supportsActivityTracking()) {
@@ -76,8 +82,15 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
         } catch (Exception e) {
             LOG.warn("Could not calculate total amount of steps: ", e);
         }
-        TextView stepsCount = fragmentView.findViewById(R.id.steps_count);
         stepsCount.setText(String.valueOf(totalSteps));
+
+        // Draw gauge
+        ActivityUser activityUser = new ActivityUser();
+        float stepsGoal = activityUser.getStepsGoal();
+        float goalFactor = totalSteps / stepsGoal;
+        if (goalFactor > 1) goalFactor = 1;
+        stepsGauge.setImageBitmap(drawGauge(200, 15, Color.BLUE, goalFactor));
+
         return fragmentView;
     }
 }

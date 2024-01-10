@@ -16,10 +16,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.slf4j.Logger;
@@ -64,9 +66,12 @@ public class DashboardDistanceWidget extends AbstractDashboardWidget {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_distance, container, false);
+        TextView distance = fragmentView.findViewById(R.id.distance_text);
+        ImageView distanceGauge = fragmentView.findViewById(R.id.distance_gauge);
+
+        // Update text representation
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         long totalSteps = 0;
         try (DBHandler dbHandler = GBApplication.acquireDB()) {
@@ -80,10 +85,16 @@ public class DashboardDistanceWidget extends AbstractDashboardWidget {
         }
         ActivityUser activityUser = new ActivityUser();
         int stepLength = activityUser.getStepLengthCm();
-        double distanceMeters = totalSteps * stepLength * 0.01;
+        float distanceMeters = totalSteps * stepLength * 0.01f;
         String distanceFormatted = FormatUtils.getFormattedDistanceLabel(distanceMeters);
-        TextView distance = fragmentView.findViewById(R.id.distance);
         distance.setText(distanceFormatted);
+
+        // Draw gauge
+        int distanceGoal = activityUser.getDistanceGoalMeters();
+        float goalFactor = distanceMeters / distanceGoal;
+        if (goalFactor > 1) goalFactor = 1;
+        distanceGauge.setImageBitmap(drawGauge(200, 15, Color.GREEN, goalFactor));
+
         return fragmentView;
     }
 }

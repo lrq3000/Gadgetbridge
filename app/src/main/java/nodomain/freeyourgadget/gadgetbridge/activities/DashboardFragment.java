@@ -86,6 +86,12 @@ public class DashboardFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        refresh();
+    }
+
+    @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.dashboard_menu, menu);
@@ -163,6 +169,7 @@ public class DashboardFragment extends Fragment {
                 GridLayout.spec(GridLayout.UNDEFINED, GridLayout.FILL,1f),
                 GridLayout.spec(GridLayout.UNDEFINED, columnSpan, GridLayout.FILL,1f)
         );
+        layoutParams.width = 0;
         int pixels_8dp = (int) (8 * scale + 0.5f);
         layoutParams.setMargins(pixels_8dp, pixels_8dp, pixels_8dp, pixels_8dp);
 

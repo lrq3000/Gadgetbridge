@@ -16,8 +16,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 
+import androidx.annotation.ColorInt;
 import androidx.fragment.app.Fragment;
 
 import org.slf4j.Logger;
@@ -95,5 +100,30 @@ public abstract class AbstractDashboardWidget extends Fragment {
     SampleProvider<? extends AbstractActivitySample> getProvider(DBHandler db, GBDevice device) {
         DeviceCoordinator coordinator = device.getDeviceCoordinator();
         return coordinator.getSampleProvider(device, db.getDaoSession());
+    }
+
+    /**
+     * @param width Bitmap width in pixels
+     * @param barWidth Gauge bar width in pixels
+     * @param filledColor Color of the filled part of the gauge
+     * @param filledFactor Factor between 0 and 1 that determines the amount of the gauge that should be filled
+     * @return Bitmap containing the gauge
+     */
+    Bitmap drawGauge(int width, int barWidth, @ColorInt int filledColor, float filledFactor) {
+        int height = width / 2;
+        int barMargin = (int) Math.ceil(barWidth / 2f);
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(barWidth);
+        paint.setColor(filledColor);
+        canvas.drawArc(barMargin, barMargin, width - barMargin, width - barMargin, 180, 180 * filledFactor, false, paint);
+        paint.setColor(Color.argb(150, 150, 150, 150));
+        canvas.drawArc(barMargin, barMargin, width - barMargin, width - barMargin, 180 + 180 * filledFactor, 180 - 180 * filledFactor, false, paint);
+
+        return bitmap;
     }
 }
