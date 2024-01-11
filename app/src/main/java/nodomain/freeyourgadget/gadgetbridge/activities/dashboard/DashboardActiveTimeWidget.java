@@ -42,6 +42,8 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
  */
 public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardActiveTimeWidget.class);
+    private TextView activeTime;
+    private ImageView activeTimeGauge;
 
     public DashboardActiveTimeWidget() {
         // Required empty public constructor
@@ -67,9 +69,22 @@ public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_active_time, container, false);
-        TextView activeTime = fragmentView.findViewById(R.id.activetime_text);
-        ImageView activeTimeGauge = fragmentView.findViewById(R.id.activetime_gauge);
+        activeTime = fragmentView.findViewById(R.id.activetime_text);
+        activeTimeGauge = fragmentView.findViewById(R.id.activetime_gauge);
 
+        fillData();
+
+        return fragmentView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (activeTime != null && activeTimeGauge != null) fillData();
+    }
+
+    @Override
+    protected void fillData() {
         // Update text representation
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         long totalActiveMinutes = 0;
@@ -80,7 +95,7 @@ public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Could not calculate total amount of sleep: ", e);
+            LOG.warn("Could not calculate total amount of activity: ", e);
         }
         String activeHours = String.format("%d", (int) Math.floor(totalActiveMinutes / 60f));
         String activeMinutes = String.format("%02d", (int) (totalActiveMinutes % 60f));
@@ -92,7 +107,5 @@ public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
         float goalFactor = (float) totalActiveMinutes / activeTimeGoal;
         if (goalFactor > 1) goalFactor = 1;
         activeTimeGauge.setImageBitmap(drawGauge(200, 15, Color.rgb(170, 0, 255), goalFactor));
-
-        return fragmentView;
     }
 }

@@ -42,6 +42,8 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
  */
 public class DashboardStepsWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardStepsWidget.class);
+    private TextView stepsCount;
+    private ImageView stepsGauge;
 
     public DashboardStepsWidget() {
         // Required empty public constructor
@@ -67,9 +69,19 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_steps, container, false);
-        TextView stepsCount = fragmentView.findViewById(R.id.steps_count);
-        ImageView stepsGauge = fragmentView.findViewById(R.id.steps_gauge);
+        stepsCount = fragmentView.findViewById(R.id.steps_count);
+        stepsGauge = fragmentView.findViewById(R.id.steps_gauge);
+        fillData();
+        return fragmentView;
+    }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (stepsCount != null && stepsGauge != null) fillData();
+    }
+
+    protected void fillData() {
         // Update text representation
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         int totalSteps = 0;
@@ -90,7 +102,5 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
         float goalFactor = totalSteps / stepsGoal;
         if (goalFactor > 1) goalFactor = 1;
         stepsGauge.setImageBitmap(drawGauge(200, 15, Color.BLUE, goalFactor));
-
-        return fragmentView;
     }
 }

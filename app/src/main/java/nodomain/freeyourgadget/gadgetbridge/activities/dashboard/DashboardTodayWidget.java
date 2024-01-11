@@ -57,6 +57,7 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
  */
 public class DashboardTodayWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardTodayWidget.class);
+    private PieChart chart;
 
     public DashboardTodayWidget() {
         // Required empty public constructor
@@ -84,7 +85,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         View todayView = inflater.inflate(R.layout.dashboard_widget_today, container, false);
 
         // Initialize chart
-        PieChart chart = todayView.findViewById(R.id.dashboard_piechart_today);
+        chart = todayView.findViewById(R.id.dashboard_piechart_today);
         chart.getDescription().setEnabled(false);
         chart.getLegend().setEnabled(false);
         chart.setDrawHoleEnabled(true);
@@ -109,6 +110,40 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
         legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_activity).append("\n").append(l_light_sleep).append(" ").append(l_deep_sleep));
 
+        // Initialize scale chart
+        PieChart scale = todayView.findViewById(R.id.dashboard_piechart_scale);
+        scale.getDescription().setEnabled(false);
+        scale.getLegend().setEnabled(false);
+        scale.setDrawHoleEnabled(true);
+        scale.setHoleColor(Color.argb(0,0,0,0));
+        scale.setHoleRadius(99f);
+        scale.setRotationEnabled(false);
+        scale.setHighlightPerTapEnabled(false);
+        scale.setRotationAngle(278f);
+        scale.setEntryLabelColor(GBApplication.getTextColor(getContext()));
+        ArrayList<PieEntry> scaleEntries = new ArrayList<>();
+        for (int i = 1; i <= 24; i++) {
+            scaleEntries.add(new PieEntry(1, String.valueOf(i)));
+        }
+        PieDataSet scaleDataSet = new PieDataSet(scaleEntries, "Time scale");
+        scaleDataSet.setSliceSpace(0f);
+        scaleDataSet.setDrawValues(false);
+        scaleDataSet.setColor(Color.argb(0,0,0,0));
+        PieData scaleData = new PieData(scaleDataSet);
+        scale.setData(scaleData);
+
+        fillData();
+
+        return todayView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (chart != null) fillData();
+    }
+
+    protected void fillData() {
         // Retrieve activity data
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         List<ActivitySample> allActivitySamples = new ArrayList<>();
@@ -216,30 +251,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         dataSet.setColors(colors);
         PieData data = new PieData(dataSet);
         chart.setData(data);
-
-        // Initialize scale chart
-        PieChart scale = todayView.findViewById(R.id.dashboard_piechart_scale);
-        scale.getDescription().setEnabled(false);
-        scale.getLegend().setEnabled(false);
-        scale.setDrawHoleEnabled(true);
-        scale.setHoleColor(Color.argb(0,0,0,0));
-        scale.setHoleRadius(99f);
-        scale.setRotationEnabled(false);
-        scale.setHighlightPerTapEnabled(false);
-        scale.setRotationAngle(278f);
-        scale.setEntryLabelColor(GBApplication.getTextColor(getContext()));
-        ArrayList<PieEntry> scaleEntries = new ArrayList<>();
-        for (int i = 1; i <= 24; i++) {
-            scaleEntries.add(new PieEntry(1, String.valueOf(i)));
-        }
-        PieDataSet scaleDataSet = new PieDataSet(scaleEntries, "Time scale");
-        scaleDataSet.setSliceSpace(0f);
-        scaleDataSet.setDrawValues(false);
-        scaleDataSet.setColor(Color.argb(0,0,0,0));
-        PieData scaleData = new PieData(scaleDataSet);
-        scale.setData(scaleData);
-
-        return todayView;
+        chart.invalidate();
     }
 
     private class GeneralizedActivity {

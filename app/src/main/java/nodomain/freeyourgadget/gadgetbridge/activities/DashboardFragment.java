@@ -57,6 +57,11 @@ public class DashboardFragment extends Fragment {
     private TextView arrowLeft;
     private TextView arrowRight;
     private GridLayout gridLayout;
+    private DashboardTodayWidget todayWidget;
+    private DashboardStepsWidget stepsWidget;
+    private DashboardDistanceWidget distanceWidget;
+    private DashboardActiveTimeWidget activeTimeWidget;
+    private DashboardSleepWidget sleepWidget;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -80,15 +85,14 @@ public class DashboardFragment extends Fragment {
             }
         });
 
+        todayWidget = null;
+        stepsWidget = null;
+        distanceWidget = null;
+        activeTimeWidget = null;
+        sleepWidget = null;
         refresh();
 
         return dashboardView;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        refresh();
     }
 
     @Override
@@ -115,6 +119,12 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        gridLayout.removeAllViews();
+        todayWidget = null;
+        stepsWidget = null;
+        distanceWidget = null;
+        activeTimeWidget = null;
+        sleepWidget = null;
         refresh();
     }
 
@@ -134,33 +144,57 @@ public class DashboardFragment extends Fragment {
             arrowRight.setAlpha(1);
         }
 
-        gridLayout.removeAllViews();
         Prefs prefs = GBApplication.getPrefs();
         boolean cardsEnabled = prefs.getBoolean("dashboard_cards_enabled", true);
 
         if (prefs.getBoolean("dashboard_widget_today_enabled", true)) {
-            createWidget(DashboardTodayWidget.newInstance(timeFrom, timeTo), cardsEnabled, 2);
+            if (todayWidget == null) {
+                todayWidget = DashboardTodayWidget.newInstance(timeFrom, timeTo);
+                createWidget(todayWidget, cardsEnabled, 2);
+            } else {
+                todayWidget.setTimespan(timeFrom, timeTo);
+            }
         }
         if (prefs.getBoolean("dashboard_widget_steps_enabled", true)) {
-            createWidget(DashboardStepsWidget.newInstance(timeFrom, timeTo), cardsEnabled, 1);
+            if (stepsWidget == null) {
+                stepsWidget = DashboardStepsWidget.newInstance(timeFrom, timeTo);
+                createWidget(stepsWidget, cardsEnabled, 1);
+            } else {
+                stepsWidget.setTimespan(timeFrom, timeTo);
+            }
         }
         if (prefs.getBoolean("dashboard_widget_distance_enabled", true)) {
-            createWidget(DashboardDistanceWidget.newInstance(timeFrom, timeTo), cardsEnabled, 1);
+            if (distanceWidget == null) {
+                distanceWidget = DashboardDistanceWidget.newInstance(timeFrom, timeTo);
+                createWidget(distanceWidget, cardsEnabled, 1);
+            } else {
+                distanceWidget.setTimespan(timeFrom, timeTo);
+            }
         }
         if (prefs.getBoolean("dashboard_widget_active_time_enabled", true)) {
-            createWidget(DashboardActiveTimeWidget.newInstance(timeFrom, timeTo), cardsEnabled, 1);
+            if (activeTimeWidget == null) {
+                activeTimeWidget = DashboardActiveTimeWidget.newInstance(timeFrom, timeTo);
+                createWidget(activeTimeWidget, cardsEnabled, 1);
+            } else {
+                activeTimeWidget.setTimespan(timeFrom, timeTo);
+            }
         }
         if (prefs.getBoolean("dashboard_widget_sleep_enabled", true)) {
-            createWidget(DashboardSleepWidget.newInstance(timeFrom, timeTo), cardsEnabled, 1);
+            if (sleepWidget == null) {
+                sleepWidget = DashboardSleepWidget.newInstance(timeFrom, timeTo);
+                createWidget(sleepWidget, cardsEnabled, 1);
+            } else {
+                sleepWidget.setTimespan(timeFrom, timeTo);
+            }
         }
     }
 
     private void createWidget(AbstractDashboardWidget widgetObj, boolean cardsEnabled, int columnSpan) {
-        final float scale = getContext().getResources().getDisplayMetrics().density;
-        FragmentContainerView fragment = new FragmentContainerView(getActivity());
+        final float scale = requireContext().getResources().getDisplayMetrics().density;
+        FragmentContainerView fragment = new FragmentContainerView(requireActivity());
         int fragmentId = View.generateViewId();
         fragment.setId(fragmentId);
-        getActivity().getSupportFragmentManager()
+        getChildFragmentManager()
                 .beginTransaction()
                 .replace(fragmentId, widgetObj)
                 .commit();
@@ -174,7 +208,7 @@ public class DashboardFragment extends Fragment {
         layoutParams.setMargins(pixels_8dp, pixels_8dp, pixels_8dp, pixels_8dp);
 
         if (cardsEnabled) {
-            MaterialCardView card = new MaterialCardView(getActivity());
+            MaterialCardView card = new MaterialCardView(requireActivity());
             int pixels_4dp = (int) (4 * scale + 0.5f);
             card.setRadius(pixels_4dp);
             card.setCardElevation(pixels_4dp);

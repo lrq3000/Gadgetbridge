@@ -60,6 +60,15 @@ public abstract class AbstractDashboardWidget extends Fragment {
         }
     }
 
+
+    public void setTimespan(int timeFrom, int timeTo) {
+        this.timeFrom = timeFrom;
+        this.timeTo = timeTo;
+        fillData();
+    }
+
+    protected abstract void fillData();
+
     protected long getSteps(GBDevice device, DBHandler db) {
         Calendar day = GregorianCalendar.getInstance();
         day.setTimeInMillis(timeTo * 1000L);

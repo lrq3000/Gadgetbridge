@@ -42,6 +42,8 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
  */
 public class DashboardSleepWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardSleepWidget.class);
+    private TextView sleepAmount;
+    private ImageView sleepGauge;
 
     public DashboardSleepWidget() {
         // Required empty public constructor
@@ -67,9 +69,22 @@ public class DashboardSleepWidget extends AbstractDashboardWidget {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_sleep, container, false);
-        TextView sleepAmount = fragmentView.findViewById(R.id.sleep_text);
-        ImageView sleepGauge = fragmentView.findViewById(R.id.sleep_gauge);
+        sleepAmount = fragmentView.findViewById(R.id.sleep_text);
+        sleepGauge = fragmentView.findViewById(R.id.sleep_gauge);
 
+        fillData();
+
+        return fragmentView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (sleepAmount != null && sleepGauge != null) fillData();
+    }
+
+    @Override
+    protected void fillData() {
         // Update text representation
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         long totalSleepMinutes = 0;
@@ -92,7 +107,5 @@ public class DashboardSleepWidget extends AbstractDashboardWidget {
         float goalFactor = (float) totalSleepMinutes / sleepMinutesGoal;
         if (goalFactor > 1) goalFactor = 1;
         sleepGauge.setImageBitmap(drawGauge(200, 15, Color.rgb(170, 0, 255), goalFactor));
-
-        return fragmentView;
     }
 }

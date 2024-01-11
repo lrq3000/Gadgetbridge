@@ -43,6 +43,8 @@ import nodomain.freeyourgadget.gadgetbridge.util.FormatUtils;
  */
 public class DashboardDistanceWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardDistanceWidget.class);
+    private TextView distanceText;
+    private ImageView distanceGauge;
 
     public DashboardDistanceWidget() {
         // Required empty public constructor
@@ -68,9 +70,22 @@ public class DashboardDistanceWidget extends AbstractDashboardWidget {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.dashboard_widget_distance, container, false);
-        TextView distance = fragmentView.findViewById(R.id.distance_text);
-        ImageView distanceGauge = fragmentView.findViewById(R.id.distance_gauge);
+        distanceText = fragmentView.findViewById(R.id.distance_text);
+        distanceGauge = fragmentView.findViewById(R.id.distance_gauge);
 
+        fillData();
+
+        return fragmentView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (distanceText != null && distanceGauge != null) fillData();
+    }
+
+    @Override
+    protected void fillData() {
         // Update text representation
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         long totalSteps = 0;
@@ -81,20 +96,18 @@ public class DashboardDistanceWidget extends AbstractDashboardWidget {
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Could not calculate total amount of steps: ", e);
+            LOG.warn("Could not calculate total distance: ", e);
         }
         ActivityUser activityUser = new ActivityUser();
         int stepLength = activityUser.getStepLengthCm();
         float distanceMeters = totalSteps * stepLength * 0.01f;
         String distanceFormatted = FormatUtils.getFormattedDistanceLabel(distanceMeters);
-        distance.setText(distanceFormatted);
+        distanceText.setText(distanceFormatted);
 
         // Draw gauge
         int distanceGoal = activityUser.getDistanceGoalMeters();
         float goalFactor = distanceMeters / distanceGoal;
         if (goalFactor > 1) goalFactor = 1;
         distanceGauge.setImageBitmap(drawGauge(200, 15, Color.GREEN, goalFactor));
-
-        return fragmentView;
     }
 }
