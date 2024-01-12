@@ -127,11 +127,12 @@ public abstract class AbstractDashboardWidget extends Fragment {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeWidth(barWidth);
+        paint.setColor(Color.argb(75, 150, 150, 150));
+        canvas.drawArc(barMargin, barMargin, width - barMargin, width - barMargin, 180 + 180 * filledFactor, 180 - 180 * filledFactor, false, paint);
         paint.setColor(filledColor);
         canvas.drawArc(barMargin, barMargin, width - barMargin, width - barMargin, 180, 180 * filledFactor, false, paint);
-        paint.setColor(Color.argb(150, 150, 150, 150));
-        canvas.drawArc(barMargin, barMargin, width - barMargin, width - barMargin, 180 + 180 * filledFactor, 180 - 180 * filledFactor, false, paint);
 
         return bitmap;
     }

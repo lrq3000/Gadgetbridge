@@ -57,7 +57,8 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
  */
 public class DashboardTodayWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardTodayWidget.class);
-    private PieChart chart;
+    private PieChart chart_0_12;
+    private PieChart chart_12_24;
 
     public DashboardTodayWidget() {
         // Required empty public constructor
@@ -84,18 +85,31 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View todayView = inflater.inflate(R.layout.dashboard_widget_today, container, false);
 
-        // Initialize chart
-        chart = todayView.findViewById(R.id.dashboard_piechart_today);
-        chart.getDescription().setEnabled(false);
-        chart.getLegend().setEnabled(false);
-        chart.setDrawHoleEnabled(true);
-        chart.setHoleColor(Color.argb(0,0,0,0));
-        chart.setHoleRadius(80f);
-        chart.setTransparentCircleRadius(81);
-        chart.setTransparentCircleColor(GBApplication.getTextColor(getContext()));
-        chart.setRotationEnabled(false);
-        chart.setDrawEntryLabels(false);
-        chart.setHighlightPerTapEnabled(false);
+        // Initialize outer chart
+        chart_12_24 = todayView.findViewById(R.id.dashboard_piechart_today_12_24);
+        chart_12_24.getDescription().setEnabled(false);
+        chart_12_24.getLegend().setEnabled(false);
+        chart_12_24.setDrawHoleEnabled(true);
+        chart_12_24.setHoleColor(Color.TRANSPARENT);
+        chart_12_24.setHoleRadius(91f);
+        chart_12_24.setTransparentCircleRadius(91f);
+        chart_12_24.setTransparentCircleColor(Color.TRANSPARENT);
+        chart_12_24.setRotationEnabled(false);
+        chart_12_24.setDrawEntryLabels(false);
+        chart_12_24.setHighlightPerTapEnabled(false);
+
+        // Initialize inner chart
+        chart_0_12 = todayView.findViewById(R.id.dashboard_piechart_today_0_12);
+        chart_0_12.getDescription().setEnabled(false);
+        chart_0_12.getLegend().setEnabled(false);
+        chart_0_12.setDrawHoleEnabled(true);
+        chart_0_12.setHoleColor(Color.TRANSPARENT);
+        chart_0_12.setHoleRadius(90f);
+        chart_0_12.setTransparentCircleRadius(91f);
+        chart_0_12.setTransparentCircleColor(GBApplication.getTextColor(getContext()));
+        chart_0_12.setRotationEnabled(false);
+        chart_0_12.setDrawEntryLabels(false);
+        chart_0_12.setHighlightPerTapEnabled(false);
 
         // Initialize legend
         TextView legend = todayView.findViewById(R.id.dashboard_piechart_legend);
@@ -115,15 +129,16 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         scale.getDescription().setEnabled(false);
         scale.getLegend().setEnabled(false);
         scale.setDrawHoleEnabled(true);
-        scale.setHoleColor(Color.argb(0,0,0,0));
-        scale.setHoleRadius(99f);
+        scale.setHoleColor(Color.TRANSPARENT);
+        scale.setHoleRadius(75f);
+        scale.setTransparentCircleRadius(75f);
         scale.setRotationEnabled(false);
         scale.setHighlightPerTapEnabled(false);
-        scale.setRotationAngle(278f);
+        scale.setRotationAngle(315f);
         scale.setEntryLabelColor(GBApplication.getTextColor(getContext()));
         ArrayList<PieEntry> scaleEntries = new ArrayList<>();
-        for (int i = 1; i <= 24; i++) {
-            scaleEntries.add(new PieEntry(1, String.valueOf(i)));
+        for (int i = 3; i <= 12; i+=3) {
+            scaleEntries.add(new PieEntry(1, String.format("%d / %d", i, i+12)));
         }
         PieDataSet scaleDataSet = new PieDataSet(scaleEntries, "Time scale");
         scaleDataSet.setSliceSpace(0f);
@@ -140,7 +155,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     @Override
     public void onResume() {
         super.onResume();
-        if (chart != null) fillData();
+        if (chart_0_12 != null) fillData();
     }
 
     protected void fillData() {
@@ -168,14 +183,18 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
 
         // Integrate and chronologically order various data from multiple devices
         List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
+        long midDaySecond = timeFrom + (12 * 60 * 60);
         for (ActivitySample sample : allActivitySamples) {
             if (sample.getKind() != ActivityKind.TYPE_NOT_WORN) continue;
             if (generalizedActivities.size() > 0) {
                 GeneralizedActivity previous = generalizedActivities.get(generalizedActivities.size() - 1);
+                // If the current sample starts within a minute after the end of the previous not worn session, merge them
                 if (previous.activityKind == ActivityKind.TYPE_NOT_WORN && previous.timeTo > sample.getTimestamp() - 60) {
-                    // If the current sample starts within a minute after the end of the previous not worn session, merge them
-                    generalizedActivities.get(generalizedActivities.size() - 1).timeTo = sample.getTimestamp() + 60;
-                    continue;
+                    // But only if the resulting activity doesn't cross the midday boundary
+                    if (sample.getTimestamp() + 60 < midDaySecond || previous.timeFrom > midDaySecond) {
+                        generalizedActivities.get(generalizedActivities.size() - 1).timeTo = sample.getTimestamp() + 60;
+                        continue;
+                    }
                 }
             }
             generalizedActivities.add(new GeneralizedActivity(
@@ -185,29 +204,64 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             ));
         }
         for (ActivitySession session : stepSessions) {
-            generalizedActivities.add(new GeneralizedActivity(
-                    session.getActivityKind(),
-                    session.getStartTime().getTime() / 1000,
-                    session.getEndTime().getTime() / 1000
-            ));
+            if (session.getStartTime().getTime() / 1000 < midDaySecond && session.getEndTime().getTime() / 1000 > midDaySecond) {
+                generalizedActivities.add(new GeneralizedActivity(
+                        session.getActivityKind(),
+                        session.getStartTime().getTime() / 1000,
+                        midDaySecond
+                ));
+                generalizedActivities.add(new GeneralizedActivity(
+                        session.getActivityKind(),
+                        midDaySecond,
+                        session.getEndTime().getTime() / 1000
+                ));
+            } else {
+                generalizedActivities.add(new GeneralizedActivity(
+                        session.getActivityKind(),
+                        session.getStartTime().getTime() / 1000,
+                        session.getEndTime().getTime() / 1000
+                ));
+            }
         }
         for (SleepAnalysis.SleepSession session : sleepSessions) {
-            generalizedActivities.add(new GeneralizedActivity(
-                    ActivityKind.TYPE_SLEEP,
-                    session.getSleepStart().getTime() / 1000,
-                    session.getSleepEnd().getTime() / 1000
-            ));
+            if (session.getSleepStart().getTime() / 1000 < midDaySecond && session.getSleepEnd().getTime() / 1000 > midDaySecond) {
+                generalizedActivities.add(new GeneralizedActivity(
+                        ActivityKind.TYPE_SLEEP,
+                        session.getSleepStart().getTime() / 1000,
+                        midDaySecond
+                ));
+                generalizedActivities.add(new GeneralizedActivity(
+                        ActivityKind.TYPE_SLEEP,
+                        midDaySecond,
+                        session.getSleepEnd().getTime() / 1000
+                ));
+            } else {
+                generalizedActivities.add(new GeneralizedActivity(
+                        ActivityKind.TYPE_SLEEP,
+                        session.getSleepStart().getTime() / 1000,
+                        session.getSleepEnd().getTime() / 1000
+                ));
+            }
         }
         Collections.sort(generalizedActivities, (o1, o2) -> (int) (o1.timeFrom - o2.timeFrom));
 
         // Add pie slice entries
-        ArrayList<PieEntry> entries = new ArrayList<>();
-        ArrayList<Integer> colors = new ArrayList<>();
+        ArrayList<PieEntry> entries_0_12 = new ArrayList<>();
+        ArrayList<Integer> colors_0_12 = new ArrayList<>();
+        ArrayList<PieEntry> entries_12_24 = new ArrayList<>();
+        ArrayList<Integer> colors_12_24 = new ArrayList<>();
         long secondIndex = timeFrom;
         for (GeneralizedActivity activity : generalizedActivities) {
             // FIXME: correctly merge parallel activities from multiple devices
             // Skip earlier sessions
             if (activity.timeFrom < secondIndex) continue;
+            // Use correct entries list for this part of the day
+            ArrayList<PieEntry> entries = entries_0_12;
+            ArrayList<Integer> colors = colors_0_12;
+            if (activity.timeFrom >= midDaySecond) {
+                entries = entries_12_24;
+                colors = colors_12_24;
+            }
             // Draw inactive slice
             if (activity.timeFrom > secondIndex) {
                 entries.add(new PieEntry(activity.timeFrom - secondIndex, "Inactive"));
@@ -226,7 +280,6 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Deep sleep"));
                 colors.add(Color.rgb(0, 0, 255));
                 secondIndex = activity.timeTo;
-            //} else if (activity.activityKind == ActivityKind.TYPE_WALKING || activity.activityKind == ActivityKind.TYPE_RUNNING || activity.activityKind == ActivityKind.TYPE_EXERCISE){
             } else {
                 entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Active"));
                 colors.add(Color.rgb(0, 255, 0));
@@ -234,24 +287,37 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             }
         }
         // Fill remaining time until midnight
-        if (Calendar.getInstance().getTimeInMillis() / 1000 > timeFrom && Calendar.getInstance().getTimeInMillis() / 1000 < timeTo) {
+        long currentTime = Calendar.getInstance().getTimeInMillis() / 1000;
+        if (currentTime > timeFrom && currentTime < midDaySecond) {
             // Fill with unknown slice up until current time
-            entries.add(new PieEntry(Calendar.getInstance().getTimeInMillis() / 1000 - secondIndex, "Unknown"));
-            colors.add(Color.rgb(128, 128, 128));
+            entries_0_12.add(new PieEntry(currentTime - secondIndex, "Unknown"));
+            colors_0_12.add(Color.argb(128, 128, 128, 128));
+            // Draw transparent slice for remaining time until midday
+            entries_0_12.add(new PieEntry(midDaySecond - currentTime, "Empty"));
+            colors_0_12.add(Color.TRANSPARENT);
+        }
+        if (currentTime >= midDaySecond && currentTime < timeTo) {
+            // Fill with unknown slice up until current time
+            entries_12_24.add(new PieEntry(currentTime - secondIndex, "Unknown"));
+            colors_12_24.add(Color.rgb(128, 128, 128));
             // Draw transparent slice for remaining time until midnight
-            entries.add(new PieEntry(timeTo - Calendar.getInstance().getTimeInMillis() / 1000, ""));
-            colors.add(Color.argb(0, 0, 0, 0));
+            entries_12_24.add(new PieEntry(timeTo - currentTime, "Empty"));
+            colors_12_24.add(Color.TRANSPARENT);
         }
 
-        // Draw chart
-        PieDataSet dataSet = new PieDataSet(entries, "Today");
-        dataSet.setSliceSpace(0f);
-        dataSet.setSelectionShift(5f);
-        dataSet.setDrawValues(false);
-        dataSet.setColors(colors);
-        PieData data = new PieData(dataSet);
-        chart.setData(data);
-        chart.invalidate();
+        // Draw charts
+        PieDataSet dataSet_0_12 = new PieDataSet(entries_0_12, "Today 0-12h");
+        dataSet_0_12.setSliceSpace(0f);
+        dataSet_0_12.setDrawValues(false);
+        dataSet_0_12.setColors(colors_0_12);
+        chart_0_12.setData(new PieData(dataSet_0_12));
+        chart_0_12.invalidate();
+        PieDataSet dataSet_12_24 = new PieDataSet(entries_12_24, "Today 12-24h");
+        dataSet_12_24.setSliceSpace(0f);
+        dataSet_12_24.setDrawValues(false);
+        dataSet_12_24.setColors(colors_12_24);
+        chart_12_24.setData(new PieData(dataSet_12_24));
+        chart_12_24.invalidate();
     }
 
     private class GeneralizedActivity {
