@@ -154,10 +154,17 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Prefs prefs = GBApplication.getPrefs();
+
         bottomNavigationView = findViewById(R.id.bottom_nav_bar);
         bottomNavigationView.setOnNavigationItemSelectedListener(this);
-        bottomNavigationView.setSelectedItemId(R.id.bottom_nav_dashboard);
-        activeFragment = R.id.bottom_nav_dashboard;
+        if (prefs.getBoolean("dashboard_as_default_view", true)) {
+            bottomNavigationView.setSelectedItemId(R.id.bottom_nav_dashboard);
+            activeFragment = R.id.bottom_nav_dashboard;
+        } else {
+            bottomNavigationView.setSelectedItemId(R.id.bottom_nav_devices);
+            activeFragment = R.id.bottom_nav_devices;
+        }
 
         IntentFilter filterLocal = new IntentFilter();
         filterLocal.addAction(GBApplication.ACTION_LANGUAGE_CHANGE);
@@ -173,7 +180,6 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
         /*
          * Ask for permission to intercept notifications on first run.
          */
-        Prefs prefs = GBApplication.getPrefs();
         pesterWithPermissions = prefs.getBoolean("permission_pestering", true);
 
         boolean displayPermissionDialog = !prefs.getBoolean("permission_dialog_displayed", false);

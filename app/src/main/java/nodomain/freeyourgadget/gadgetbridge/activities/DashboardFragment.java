@@ -43,7 +43,6 @@ import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.AbstractDashboardWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardActiveTimeWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardDistanceWidget;
-import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardSettingsActivity;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardSleepWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardStepsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardTodayWidget;
@@ -107,10 +106,6 @@ public class DashboardFragment extends Fragment {
             case R.id.dashboard_show_calendar:
                 // TODO: implement calendar activity
                 GB.toast("The calendar view is not implemented yet", Toast.LENGTH_SHORT, GB.INFO);
-                return false;
-            case R.id.dashboard_settings:
-                Intent intent = new Intent(requireActivity(), DashboardSettingsActivity.class);
-                startActivityForResult(intent, 0);
                 return false;
         }
         return super.onOptionsItemSelected(item);
