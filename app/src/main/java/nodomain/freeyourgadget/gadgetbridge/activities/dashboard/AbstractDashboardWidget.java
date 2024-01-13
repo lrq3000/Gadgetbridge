@@ -1,4 +1,4 @@
-/*  Copyright (C) 2023 Arjan Schrijver
+/*  Copyright (C) 2023-2024 Arjan Schrijver
 
     This file is part of Gadgetbridge.
 
@@ -32,6 +32,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 
+import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.activities.charts.StepAnalysis;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.devices.DeviceCoordinator;
@@ -40,6 +41,7 @@ import nodomain.freeyourgadget.gadgetbridge.entities.AbstractActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
+import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
 import nodomain.freeyourgadget.gadgetbridge.model.DailyTotals;
 
 public abstract class AbstractDashboardWidget extends Fragment {
@@ -50,6 +52,14 @@ public abstract class AbstractDashboardWidget extends Fragment {
 
     protected int timeFrom;
     protected int timeTo;
+
+    protected @ColorInt int color_not_worn = Color.argb(128, 0, 0, 0);
+    protected @ColorInt int color_worn = Color.argb(128, 128, 128, 128);
+    protected @ColorInt int color_activity = Color.GREEN;
+    protected @ColorInt int color_deep_sleep = Color.BLUE;
+    protected @ColorInt int color_light_sleep = Color.rgb(150, 150, 255);
+    protected @ColorInt int color_distance = Color.BLUE;
+    protected @ColorInt int color_active_time = Color.rgb(170, 0, 255);
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -135,5 +145,103 @@ public abstract class AbstractDashboardWidget extends Fragment {
         canvas.drawArc(barMargin, barMargin, width - barMargin, width - barMargin, 180, 180 * filledFactor, false, paint);
 
         return bitmap;
+    }
+
+    protected int getStepsTotal() {
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        int totalSteps = 0;
+        try (DBHandler dbHandler = GBApplication.acquireDB()) {
+            for (GBDevice dev : devices) {
+                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalSteps += getSteps(dev, dbHandler);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not calculate total amount of steps: ", e);
+        }
+        return totalSteps;
+    }
+
+    protected float getStepsGoalFactor() {
+        ActivityUser activityUser = new ActivityUser();
+        float stepsGoal = activityUser.getStepsGoal();
+        float goalFactor = getStepsTotal() / stepsGoal;
+        if (goalFactor > 1) goalFactor = 1;
+
+        return goalFactor;
+    }
+
+    protected float getDistanceTotal() {
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        long totalSteps = 0;
+        try (DBHandler dbHandler = GBApplication.acquireDB()) {
+            for (GBDevice dev : devices) {
+                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalSteps += getSteps(dev, dbHandler);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not calculate total distance: ", e);
+        }
+        ActivityUser activityUser = new ActivityUser();
+        int stepLength = activityUser.getStepLengthCm();
+        return totalSteps * stepLength * 0.01f;
+    }
+
+    protected float getDistanceGoalFactor() {
+        ActivityUser activityUser = new ActivityUser();
+        int distanceGoal = activityUser.getDistanceGoalMeters();
+        float goalFactor = getDistanceTotal() / distanceGoal;
+        if (goalFactor > 1) goalFactor = 1;
+
+        return goalFactor;
+    }
+
+    protected long getActiveMinutesTotal() {
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        long totalActiveMinutes = 0;
+        try (DBHandler dbHandler = GBApplication.acquireDB()) {
+            for (GBDevice dev : devices) {
+                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalActiveMinutes += getActiveMinutes(dev, dbHandler, timeFrom, timeTo);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not calculate total amount of activity: ", e);
+        }
+        return totalActiveMinutes;
+    }
+
+    protected float getActiveMinutesGoalFactor() {
+        ActivityUser activityUser = new ActivityUser();
+        int activeTimeGoal = activityUser.getActiveTimeGoalMinutes();
+        float goalFactor = (float) getActiveMinutesTotal() / activeTimeGoal;
+        if (goalFactor > 1) goalFactor = 1;
+
+        return goalFactor;
+    }
+
+    protected long getSleepMinutesTotal() {
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        long totalSleepMinutes = 0;
+        try (DBHandler dbHandler = GBApplication.acquireDB()) {
+            for (GBDevice dev : devices) {
+                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalSleepMinutes += getSleep(dev, dbHandler);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Could not calculate total amount of sleep: ", e);
+        }
+        return totalSleepMinutes;
+    }
+
+    protected float getSleepMinutesGoalFactor() {
+        ActivityUser activityUser = new ActivityUser();
+        int sleepMinutesGoal = activityUser.getSleepDurationGoal() * 60;
+        float goalFactor = (float) getSleepMinutesTotal() / sleepMinutesGoal;
+        if (goalFactor > 1) goalFactor = 1;
+
+        return goalFactor;
     }
 }

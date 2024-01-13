@@ -98,7 +98,6 @@
                     android:key="dashboard_widget_goals_enabled"
                     android:layout="@layout/preference_checkbox"
                     android:title="Goals chart"
-                    android:enabled="false"
                     app:iconSpaceReserved="false" />
                 <SwitchPreferenceCompat
                     android:defaultValue="true"

@@ -1,4 +1,4 @@
-/*  Copyright (C) 2023 Arjan Schrijver
+/*  Copyright (C) 2023-2024 Arjan Schrijver
 
     This file is part of Gadgetbridge.
 
@@ -114,13 +114,13 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         // Initialize legend
         TextView legend = todayView.findViewById(R.id.dashboard_piechart_legend);
         SpannableString l_not_worn = new SpannableString("■ " + getString(R.string.abstract_chart_fragment_kind_not_worn));
-        l_not_worn.setSpan(new ForegroundColorSpan(Color.rgb(0, 0, 0)), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        l_not_worn.setSpan(new ForegroundColorSpan(color_not_worn), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableString l_activity = new SpannableString("■ " + getString(R.string.activity_type_activity));
-        l_activity.setSpan(new ForegroundColorSpan(Color.rgb(0, 255, 0)), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        l_activity.setSpan(new ForegroundColorSpan(color_activity), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableString l_deep_sleep = new SpannableString("■ " + getString(R.string.activity_type_deep_sleep));
-        l_deep_sleep.setSpan(new ForegroundColorSpan(Color.rgb(0, 0, 255)), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        l_deep_sleep.setSpan(new ForegroundColorSpan(color_deep_sleep), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableString l_light_sleep = new SpannableString("■ " + getString(R.string.activity_type_light_sleep));
-        l_light_sleep.setSpan(new ForegroundColorSpan(Color.rgb(150, 150, 255)), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        l_light_sleep.setSpan(new ForegroundColorSpan(color_light_sleep), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
         legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_activity).append("\n").append(l_light_sleep).append(" ").append(l_deep_sleep));
 
@@ -143,7 +143,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         PieDataSet scaleDataSet = new PieDataSet(scaleEntries, "Time scale");
         scaleDataSet.setSliceSpace(0f);
         scaleDataSet.setDrawValues(false);
-        scaleDataSet.setColor(Color.argb(0,0,0,0));
+        scaleDataSet.setColor(Color.TRANSPARENT);
         PieData scaleData = new PieData(scaleDataSet);
         scale.setData(scaleData);
 
@@ -265,24 +265,24 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             // Draw inactive slice
             if (activity.timeFrom > secondIndex) {
                 entries.add(new PieEntry(activity.timeFrom - secondIndex, "Inactive"));
-                colors.add(Color.rgb(128, 128, 128));
+                colors.add(color_worn);
             }
             // Draw activity slices
             if (activity.activityKind == ActivityKind.TYPE_NOT_WORN) {
                 entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Not worn"));
-                colors.add(Color.rgb(0, 0, 0));
+                colors.add(color_not_worn);
                 secondIndex = activity.timeTo;
             } else if (activity.activityKind == ActivityKind.TYPE_LIGHT_SLEEP || activity.activityKind == ActivityKind.TYPE_SLEEP) {
                 entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Light sleep"));
-                colors.add(Color.rgb(150, 150, 255));
+                colors.add(color_light_sleep);
                 secondIndex = activity.timeTo;
             } else if (activity.activityKind == ActivityKind.TYPE_DEEP_SLEEP) {
                 entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Deep sleep"));
-                colors.add(Color.rgb(0, 0, 255));
+                colors.add(color_deep_sleep);
                 secondIndex = activity.timeTo;
             } else {
                 entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Active"));
-                colors.add(Color.rgb(0, 255, 0));
+                colors.add(color_activity);
                 secondIndex = activity.timeTo;
             }
         }
@@ -291,7 +291,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         if (currentTime > timeFrom && currentTime < midDaySecond) {
             // Fill with unknown slice up until current time
             entries_0_12.add(new PieEntry(currentTime - secondIndex, "Unknown"));
-            colors_0_12.add(Color.argb(128, 128, 128, 128));
+            colors_0_12.add(color_worn);
             // Draw transparent slice for remaining time until midday
             entries_0_12.add(new PieEntry(midDaySecond - currentTime, "Empty"));
             colors_0_12.add(Color.TRANSPARENT);
@@ -299,7 +299,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         if (currentTime >= midDaySecond && currentTime < timeTo) {
             // Fill with unknown slice up until current time
             entries_12_24.add(new PieEntry(currentTime - secondIndex, "Unknown"));
-            colors_12_24.add(Color.rgb(128, 128, 128));
+            colors_12_24.add(color_worn);
             // Draw transparent slice for remaining time until midnight
             entries_12_24.add(new PieEntry(timeTo - currentTime, "Empty"));
             colors_12_24.add(Color.TRANSPARENT);

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".activities.dashboard.DashboardGoalsWidget">
+
+    <ImageView
+        android:id="@+id/dashboard_goals_chart"
+        android:layout_width="match_parent"
+        android:layout_height="230dp"
+        android:scaleType="fitCenter" />
+
+    <TextView
+        android:id="@+id/dashboard_goals_legend"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="8dp"
+        android:textAlignment="center" />
+</LinearLayout>

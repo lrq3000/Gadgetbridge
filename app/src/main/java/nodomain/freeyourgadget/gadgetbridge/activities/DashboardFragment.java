@@ -1,4 +1,4 @@
-/*  Copyright (C) 2023 Arjan Schrijver
+/*  Copyright (C) 2023-2024 Arjan Schrijver
 
     This file is part of Gadgetbridge.
 
@@ -43,6 +43,7 @@ import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.AbstractDashboardWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardActiveTimeWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardDistanceWidget;
+import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardGoalsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardSleepWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardStepsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardTodayWidget;
@@ -57,6 +58,7 @@ public class DashboardFragment extends Fragment {
     private TextView arrowRight;
     private GridLayout gridLayout;
     private DashboardTodayWidget todayWidget;
+    private DashboardGoalsWidget goalsWidget;
     private DashboardStepsWidget stepsWidget;
     private DashboardDistanceWidget distanceWidget;
     private DashboardActiveTimeWidget activeTimeWidget;
@@ -85,6 +87,7 @@ public class DashboardFragment extends Fragment {
         });
 
         todayWidget = null;
+        goalsWidget = null;
         stepsWidget = null;
         distanceWidget = null;
         activeTimeWidget = null;
@@ -116,6 +119,7 @@ public class DashboardFragment extends Fragment {
         super.onActivityResult(requestCode, resultCode, data);
         gridLayout.removeAllViews();
         todayWidget = null;
+        goalsWidget = null;
         stepsWidget = null;
         distanceWidget = null;
         activeTimeWidget = null;
@@ -148,6 +152,14 @@ public class DashboardFragment extends Fragment {
                 createWidget(todayWidget, cardsEnabled, 2);
             } else {
                 todayWidget.setTimespan(timeFrom, timeTo);
+            }
+        }
+        if (prefs.getBoolean("dashboard_widget_goals_enabled", true)) {
+            if (goalsWidget == null) {
+                goalsWidget = DashboardGoalsWidget.newInstance(timeFrom, timeTo);
+                createWidget(goalsWidget, cardsEnabled, 2);
+            } else {
+                goalsWidget.setTimespan(timeFrom, timeTo);
             }
         }
         if (prefs.getBoolean("dashboard_widget_steps_enabled", true)) {

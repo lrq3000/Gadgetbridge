@@ -1,4 +1,4 @@
-/*  Copyright (C) 2023 Arjan Schrijver
+/*  Copyright (C) 2023-2024 Arjan Schrijver
 
     This file is part of Gadgetbridge.
 
@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,13 +26,7 @@ import android.widget.TextView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
-import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
-import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -83,24 +76,9 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
 
     protected void fillData() {
         // Update text representation
-        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
-        int totalSteps = 0;
-        try (DBHandler dbHandler = GBApplication.acquireDB()) {
-            for (GBDevice dev : devices) {
-                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                    totalSteps += getSteps(dev, dbHandler);
-                }
-            }
-        } catch (Exception e) {
-            LOG.warn("Could not calculate total amount of steps: ", e);
-        }
-        stepsCount.setText(String.valueOf(totalSteps));
+        stepsCount.setText(String.valueOf(getStepsTotal()));
 
         // Draw gauge
-        ActivityUser activityUser = new ActivityUser();
-        float stepsGoal = activityUser.getStepsGoal();
-        float goalFactor = totalSteps / stepsGoal;
-        if (goalFactor > 1) goalFactor = 1;
-        stepsGauge.setImageBitmap(drawGauge(200, 15, Color.BLUE, goalFactor));
+        stepsGauge.setImageBitmap(drawGauge(200, 15, color_activity, getStepsGoalFactor()));
     }
 }

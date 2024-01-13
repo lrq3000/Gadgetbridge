@@ -1,4 +1,4 @@
-/*  Copyright (C) 2023 Arjan Schrijver
+/*  Copyright (C) 2023-2024 Arjan Schrijver
 
     This file is part of Gadgetbridge.
 
@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,13 +26,7 @@ import android.widget.TextView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
-import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
-import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
-import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -86,26 +79,12 @@ public class DashboardSleepWidget extends AbstractDashboardWidget {
     @Override
     protected void fillData() {
         // Update text representation
-        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
-        long totalSleepMinutes = 0;
-        try (DBHandler dbHandler = GBApplication.acquireDB()) {
-            for (GBDevice dev : devices) {
-                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                    totalSleepMinutes += getSleep(dev, dbHandler);
-                }
-            }
-        } catch (Exception e) {
-            LOG.warn("Could not calculate total amount of sleep: ", e);
-        }
+        long totalSleepMinutes = getSleepMinutesTotal();
         String sleepHours = String.format("%d", (int) Math.floor(totalSleepMinutes / 60f));
         String sleepMinutes = String.format("%02d", (int) (totalSleepMinutes % 60f));
         sleepAmount.setText(sleepHours + ":" + sleepMinutes);
 
         // Draw gauge
-        ActivityUser activityUser = new ActivityUser();
-        int sleepMinutesGoal = activityUser.getSleepDurationGoal() * 60;
-        float goalFactor = (float) totalSleepMinutes / sleepMinutesGoal;
-        if (goalFactor > 1) goalFactor = 1;
-        sleepGauge.setImageBitmap(drawGauge(200, 15, Color.rgb(170, 0, 255), goalFactor));
+        sleepGauge.setImageBitmap(drawGauge(200, 15, color_light_sleep, getSleepMinutesGoalFactor()));
     }
 }
