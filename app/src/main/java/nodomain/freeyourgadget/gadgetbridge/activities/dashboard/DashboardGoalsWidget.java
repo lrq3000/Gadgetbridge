@@ -81,7 +81,7 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
         SpannableString l_sleep = new SpannableString("■ " + getString(R.string.menuitem_sleep));
         l_sleep.setSpan(new ForegroundColorSpan(color_light_sleep), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
-        legend.setText(legendBuilder.append(l_steps).append(" ").append(l_distance).append("\n").append(l_sleep).append(" ").append(l_active_time));
+        legend.setText(legendBuilder.append(l_steps).append(" ").append(l_distance).append("\n").append(l_active_time).append(" ").append(l_sleep));
 
         fillData();
 
@@ -120,7 +120,7 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
         canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * getActiveMinutesGoalFactor(), false, paint);
 
         barMargin += barWidth * 1.5;
-        paint.setColor(color_deep_sleep);
+        paint.setColor(color_light_sleep);
         canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * getSleepMinutesGoalFactor(), false, paint);
 
         goalsChart.setImageBitmap(bitmap);

@@ -115,6 +115,8 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         TextView legend = todayView.findViewById(R.id.dashboard_piechart_legend);
         SpannableString l_not_worn = new SpannableString("■ " + getString(R.string.abstract_chart_fragment_kind_not_worn));
         l_not_worn.setSpan(new ForegroundColorSpan(color_not_worn), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        SpannableString l_worn = new SpannableString("■ " + "Worn");
+        l_worn.setSpan(new ForegroundColorSpan(color_worn), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableString l_activity = new SpannableString("■ " + getString(R.string.activity_type_activity));
         l_activity.setSpan(new ForegroundColorSpan(color_activity), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableString l_deep_sleep = new SpannableString("■ " + getString(R.string.activity_type_deep_sleep));
@@ -122,7 +124,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         SpannableString l_light_sleep = new SpannableString("■ " + getString(R.string.activity_type_light_sleep));
         l_light_sleep.setSpan(new ForegroundColorSpan(color_light_sleep), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
-        legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_activity).append("\n").append(l_light_sleep).append(" ").append(l_deep_sleep));
+        legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_worn).append(" ").append(l_activity).append("\n").append(l_light_sleep).append(" ").append(l_deep_sleep));
 
         // Initialize scale chart
         PieChart scale = todayView.findViewById(R.id.dashboard_piechart_scale);
