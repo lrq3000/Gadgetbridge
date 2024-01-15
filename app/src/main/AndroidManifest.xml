@@ -848,6 +848,11 @@
             android:name=".externalevents.opentracks.OpenTracksController"
             android:label="OpenTracks controller and intent receiver"
             android:exported="true"/>
+
+        <activity
+            android:name=".activities.dashboard.DashboardCalendarActivity"
+            android:label="@string/menuitem_calendar"
+            android:parentActivityName=".activities.MainActivity" />
     </application>
 
 </manifest>

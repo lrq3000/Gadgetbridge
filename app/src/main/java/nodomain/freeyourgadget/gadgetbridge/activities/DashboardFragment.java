@@ -25,7 +25,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -42,13 +41,13 @@ import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.AbstractDashboardWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardActiveTimeWidget;
+import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardCalendarActivity;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardDistanceWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardGoalsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardSleepWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardStepsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardTodayWidget;
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
-import nodomain.freeyourgadget.gadgetbridge.util.GB;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 public class DashboardFragment extends Fragment {
@@ -107,8 +106,9 @@ public class DashboardFragment extends Fragment {
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case R.id.dashboard_show_calendar:
-                // TODO: implement calendar activity
-                GB.toast("The calendar view is not implemented yet", Toast.LENGTH_SHORT, GB.INFO);
+                Intent intent = new Intent(requireActivity(), DashboardCalendarActivity.class);
+                intent.putExtra(DashboardCalendarActivity.EXTRA_TIMESTAMP, day.getTimeInMillis());
+                startActivityForResult(intent, 0);
                 return false;
         }
         return super.onOptionsItemSelected(item);
@@ -117,6 +117,12 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 0 && resultCode == DashboardCalendarActivity.RESULT_OK && data != null) {
+            long timeMillis = data.getLongExtra(DashboardCalendarActivity.EXTRA_TIMESTAMP, 0);
+            if (timeMillis != 0) {
+                day.setTimeInMillis(timeMillis);
+            }
+        }
         gridLayout.removeAllViews();
         todayWidget = null;
         goalsWidget = null;

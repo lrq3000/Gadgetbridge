@@ -236,4 +236,16 @@ public class DateTimeUtils {
                 && calendar1.get(Calendar.MONTH) == calendar2.get(Calendar.MONTH)
                 && calendar1.get(Calendar.DAY_OF_MONTH) == calendar2.get(Calendar.DAY_OF_MONTH);
     }
+
+    /**
+     * Determine whether two Calendar instances are in the same month
+     *
+     * @param calendar1 The first calendar to compare
+     * @param calendar2 The second calendar to compare
+     * @return true if the Calendar instances are in the same month
+     */
+    public static boolean isSameMonth(Calendar calendar1, Calendar calendar2) {
+        return calendar1.get(Calendar.YEAR) == calendar2.get(Calendar.YEAR)
+                && calendar1.get(Calendar.MONTH) == calendar2.get(Calendar.MONTH);
+    }
 }
