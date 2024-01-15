@@ -49,6 +49,7 @@ import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivityKind;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
+import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -57,6 +58,9 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
  */
 public class DashboardTodayWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardTodayWidget.class);
+
+    private boolean mode_24h;
+
     private PieChart chart_0_12;
     private PieChart chart_12_24;
 
@@ -85,31 +89,46 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View todayView = inflater.inflate(R.layout.dashboard_widget_today, container, false);
 
+        // Determine whether to draw a single or a double chart. In case 24h mode is selected,
+        // use just the outer chart (chart_12_24) for all data.
+        Prefs prefs = GBApplication.getPrefs();
+        mode_24h = prefs.getBoolean("dashboard_widget_today_24h", false);
+
         // Initialize outer chart
         chart_12_24 = todayView.findViewById(R.id.dashboard_piechart_today_12_24);
         chart_12_24.getDescription().setEnabled(false);
         chart_12_24.getLegend().setEnabled(false);
         chart_12_24.setDrawHoleEnabled(true);
         chart_12_24.setHoleColor(Color.TRANSPARENT);
-        chart_12_24.setHoleRadius(91f);
-        chart_12_24.setTransparentCircleRadius(91f);
-        chart_12_24.setTransparentCircleColor(Color.TRANSPARENT);
         chart_12_24.setRotationEnabled(false);
         chart_12_24.setDrawEntryLabels(false);
         chart_12_24.setHighlightPerTapEnabled(false);
+        if (mode_24h) {
+            chart_12_24.setHoleRadius(80f);
+            chart_12_24.setTransparentCircleRadius(81f);
+            chart_12_24.setTransparentCircleColor(GBApplication.getTextColor(getContext()));
+        } else {
+            chart_12_24.setHoleRadius(91f);
+            chart_12_24.setTransparentCircleRadius(91f);
+            chart_12_24.setTransparentCircleColor(Color.TRANSPARENT);
+        }
 
         // Initialize inner chart
         chart_0_12 = todayView.findViewById(R.id.dashboard_piechart_today_0_12);
-        chart_0_12.getDescription().setEnabled(false);
-        chart_0_12.getLegend().setEnabled(false);
-        chart_0_12.setDrawHoleEnabled(true);
-        chart_0_12.setHoleColor(Color.TRANSPARENT);
-        chart_0_12.setHoleRadius(90f);
-        chart_0_12.setTransparentCircleRadius(91f);
-        chart_0_12.setTransparentCircleColor(GBApplication.getTextColor(getContext()));
-        chart_0_12.setRotationEnabled(false);
-        chart_0_12.setDrawEntryLabels(false);
-        chart_0_12.setHighlightPerTapEnabled(false);
+        if (mode_24h) {
+            chart_0_12.setVisibility(View.INVISIBLE);
+        } else {
+            chart_0_12.getDescription().setEnabled(false);
+            chart_0_12.getLegend().setEnabled(false);
+            chart_0_12.setDrawHoleEnabled(true);
+            chart_0_12.setHoleColor(Color.TRANSPARENT);
+            chart_0_12.setHoleRadius(90f);
+            chart_0_12.setTransparentCircleRadius(91f);
+            chart_0_12.setTransparentCircleColor(GBApplication.getTextColor(getContext()));
+            chart_0_12.setRotationEnabled(false);
+            chart_0_12.setDrawEntryLabels(false);
+            chart_0_12.setHighlightPerTapEnabled(false);
+        }
 
         // Initialize legend
         TextView legend = todayView.findViewById(R.id.dashboard_piechart_legend);
@@ -136,11 +155,18 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         scale.setTransparentCircleRadius(75f);
         scale.setRotationEnabled(false);
         scale.setHighlightPerTapEnabled(false);
-        scale.setRotationAngle(315f);
         scale.setEntryLabelColor(GBApplication.getTextColor(getContext()));
         ArrayList<PieEntry> scaleEntries = new ArrayList<>();
-        for (int i = 3; i <= 12; i+=3) {
-            scaleEntries.add(new PieEntry(1, String.format("%d / %d", i, i+12)));
+        if (mode_24h) {
+            scale.setRotationAngle(285f);
+            for (int i = 2; i <= 24; i+= 2) {
+                scaleEntries.add(new PieEntry(1, String.valueOf(i)));
+            }
+        } else {
+            scale.setRotationAngle(315f);
+            for (int i = 3; i <= 12; i += 3) {
+                scaleEntries.add(new PieEntry(1, String.format("%d / %d", i, i + 12)));
+            }
         }
         PieDataSet scaleDataSet = new PieDataSet(scaleEntries, "Time scale");
         scaleDataSet.setSliceSpace(0f);
@@ -260,7 +286,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             // Use correct entries list for this part of the day
             ArrayList<PieEntry> entries = entries_0_12;
             ArrayList<Integer> colors = colors_0_12;
-            if (activity.timeFrom >= midDaySecond) {
+            if (mode_24h || activity.timeFrom >= midDaySecond) {
                 entries = entries_12_24;
                 colors = colors_12_24;
             }
@@ -308,12 +334,14 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         }
 
         // Draw charts
-        PieDataSet dataSet_0_12 = new PieDataSet(entries_0_12, "Today 0-12h");
-        dataSet_0_12.setSliceSpace(0f);
-        dataSet_0_12.setDrawValues(false);
-        dataSet_0_12.setColors(colors_0_12);
-        chart_0_12.setData(new PieData(dataSet_0_12));
-        chart_0_12.invalidate();
+        if (!mode_24h) {
+            PieDataSet dataSet_0_12 = new PieDataSet(entries_0_12, "Today 0-12h");
+            dataSet_0_12.setSliceSpace(0f);
+            dataSet_0_12.setDrawValues(false);
+            dataSet_0_12.setColors(colors_0_12);
+            chart_0_12.setData(new PieData(dataSet_0_12));
+            chart_0_12.invalidate();
+        }
         PieDataSet dataSet_12_24 = new PieDataSet(entries_12_24, "Today 12-24h");
         dataSet_12_24.setSliceSpace(0f);
         dataSet_12_24.setDrawValues(false);

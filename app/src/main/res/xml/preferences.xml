@@ -87,12 +87,23 @@
                 android:key="pref_key_dashboard_widgets"
                 android:title="Widget settings"
                 app:iconSpaceReserved="false">
-                <SwitchPreferenceCompat
-                    android:defaultValue="true"
-                    android:key="dashboard_widget_today_enabled"
-                    android:layout="@layout/preference_checkbox"
+                <PreferenceScreen
+                    android:key="pref_key_dashboard_today"
                     android:title="Activity chart"
-                    app:iconSpaceReserved="false" />
+                    app:iconSpaceReserved="false">
+                    <SwitchPreferenceCompat
+                        android:defaultValue="true"
+                        android:key="dashboard_widget_today_enabled"
+                        android:layout="@layout/preference_checkbox"
+                        android:title="@string/function_enabled"
+                        app:iconSpaceReserved="false" />
+                    <SwitchPreferenceCompat
+                        android:defaultValue="false"
+                        android:key="dashboard_widget_today_24h"
+                        android:layout="@layout/preference_checkbox"
+                        android:title="24h mode"
+                        app:iconSpaceReserved="false" />
+                </PreferenceScreen>
                 <SwitchPreferenceCompat
                     android:defaultValue="true"
                     android:key="dashboard_widget_goals_enabled"
