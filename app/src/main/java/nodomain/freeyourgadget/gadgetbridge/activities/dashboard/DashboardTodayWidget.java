@@ -218,8 +218,8 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 GeneralizedActivity previous = generalizedActivities.get(generalizedActivities.size() - 1);
                 // If the current sample starts within a minute after the end of the previous not worn session, merge them
                 if (previous.activityKind == ActivityKind.TYPE_NOT_WORN && previous.timeTo > sample.getTimestamp() - 60) {
-                    // But only if the resulting activity doesn't cross the midday boundary
-                    if (sample.getTimestamp() + 60 < midDaySecond || previous.timeFrom > midDaySecond) {
+                    // But only if the resulting activity doesn't cross the midday boundary in 12h mode
+                    if (mode_24h || sample.getTimestamp() + 60 < midDaySecond || previous.timeFrom > midDaySecond) {
                         generalizedActivities.get(generalizedActivities.size() - 1).timeTo = sample.getTimestamp() + 60;
                         continue;
                     }
@@ -232,7 +232,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             ));
         }
         for (ActivitySession session : stepSessions) {
-            if (session.getStartTime().getTime() / 1000 < midDaySecond && session.getEndTime().getTime() / 1000 > midDaySecond) {
+            if (!mode_24h && session.getStartTime().getTime() / 1000 < midDaySecond && session.getEndTime().getTime() / 1000 > midDaySecond) {
                 generalizedActivities.add(new GeneralizedActivity(
                         session.getActivityKind(),
                         session.getStartTime().getTime() / 1000,
@@ -316,7 +316,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         }
         // Fill remaining time until midnight
         long currentTime = Calendar.getInstance().getTimeInMillis() / 1000;
-        if (currentTime > timeFrom && currentTime < midDaySecond) {
+        if (!mode_24h && currentTime > timeFrom && currentTime < midDaySecond) {
             // Fill with unknown slice up until current time
             entries_0_12.add(new PieEntry(currentTime - secondIndex, "Unknown"));
             colors_0_12.add(color_worn);
@@ -324,7 +324,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             entries_0_12.add(new PieEntry(midDaySecond - currentTime, "Empty"));
             colors_0_12.add(Color.TRANSPARENT);
         }
-        if (currentTime >= midDaySecond && currentTime < timeTo) {
+        if ((mode_24h || currentTime >= midDaySecond) && currentTime < timeTo) {
             // Fill with unknown slice up until current time
             entries_12_24.add(new PieEntry(currentTime - secondIndex, "Unknown"));
             colors_12_24.add(color_worn);
