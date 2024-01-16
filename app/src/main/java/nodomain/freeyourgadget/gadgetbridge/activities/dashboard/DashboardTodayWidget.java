@@ -42,7 +42,6 @@ import java.util.List;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.activities.charts.SleepAnalysis;
 import nodomain.freeyourgadget.gadgetbridge.activities.charts.StepAnalysis;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
@@ -191,18 +190,13 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         List<ActivitySample> allActivitySamples = new ArrayList<>();
         List<ActivitySession> stepSessions = new ArrayList<>();
-        List<SleepAnalysis.SleepSession> sleepSessions = new ArrayList<>();
         try (DBHandler dbHandler = GBApplication.acquireDB()) {
             for (GBDevice dev : devices) {
                 if (dev.getDeviceCoordinator().supportsActivityTracking()) {
                     List<? extends ActivitySample> activitySamples = getAllSamples(dbHandler, dev, timeFrom, timeTo);
                     allActivitySamples.addAll(activitySamples);
                     StepAnalysis stepAnalysis = new StepAnalysis();
-                    SleepAnalysis sleepAnalysis = new SleepAnalysis();
-                    if (activitySamples != null) {
-                        stepSessions.addAll(stepAnalysis.calculateStepSessions(activitySamples));
-                        sleepSessions.addAll(sleepAnalysis.calculateSleepSessions(activitySamples));
-                    }
+                    stepSessions.addAll(stepAnalysis.calculateStepSessions(activitySamples));
                 }
             }
         } catch (Exception e) {
@@ -213,11 +207,13 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
         long midDaySecond = timeFrom + (12 * 60 * 60);
         for (ActivitySample sample : allActivitySamples) {
-            if (sample.getKind() != ActivityKind.TYPE_NOT_WORN) continue;
+            // Handle only TYPE_NOT_WORN and TYPE_SLEEP (including variants) here
+            if (sample.getKind() != ActivityKind.TYPE_NOT_WORN && (sample.getKind() == ActivityKind.TYPE_NOT_MEASURED || (sample.getKind() & ActivityKind.TYPE_SLEEP) == 0))
+                continue;
             if (generalizedActivities.size() > 0) {
                 GeneralizedActivity previous = generalizedActivities.get(generalizedActivities.size() - 1);
-                // If the current sample starts within a minute after the end of the previous not worn session, merge them
-                if (previous.activityKind == ActivityKind.TYPE_NOT_WORN && previous.timeTo > sample.getTimestamp() - 60) {
+                // Merge samples if the type is the same, and they are within a minute of each other
+                if (previous.activityKind == sample.getKind() && previous.timeTo > sample.getTimestamp() - 60) {
                     // But only if the resulting activity doesn't cross the midday boundary in 12h mode
                     if (mode_24h || sample.getTimestamp() + 60 < midDaySecond || previous.timeFrom > midDaySecond) {
                         generalizedActivities.get(generalizedActivities.size() - 1).timeTo = sample.getTimestamp() + 60;
@@ -248,26 +244,6 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                         session.getActivityKind(),
                         session.getStartTime().getTime() / 1000,
                         session.getEndTime().getTime() / 1000
-                ));
-            }
-        }
-        for (SleepAnalysis.SleepSession session : sleepSessions) {
-            if (session.getSleepStart().getTime() / 1000 < midDaySecond && session.getSleepEnd().getTime() / 1000 > midDaySecond) {
-                generalizedActivities.add(new GeneralizedActivity(
-                        ActivityKind.TYPE_SLEEP,
-                        session.getSleepStart().getTime() / 1000,
-                        midDaySecond
-                ));
-                generalizedActivities.add(new GeneralizedActivity(
-                        ActivityKind.TYPE_SLEEP,
-                        midDaySecond,
-                        session.getSleepEnd().getTime() / 1000
-                ));
-            } else {
-                generalizedActivities.add(new GeneralizedActivity(
-                        ActivityKind.TYPE_SLEEP,
-                        session.getSleepStart().getTime() / 1000,
-                        session.getSleepEnd().getTime() / 1000
                 ));
             }
         }
