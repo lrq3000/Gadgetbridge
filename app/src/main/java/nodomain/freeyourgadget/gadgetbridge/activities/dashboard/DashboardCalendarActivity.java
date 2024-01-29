@@ -24,6 +24,7 @@ import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.widget.TextView;
 
+import androidx.annotation.ColorInt;
 import androidx.gridlayout.widget.GridLayout;
 
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ import java.util.Locale;
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.AbstractGBActivity;
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
+import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
 
 public class DashboardCalendarActivity extends AbstractGBActivity {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardCalendarActivity.class);
@@ -148,9 +150,28 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
         TextView text = prepareGridElement(cellSize);
         text.setText(String.valueOf(day.get(Calendar.DAY_OF_MONTH)));
         if (clickable) {
+            // Determine day color by the amount of the steps goal reached
+            int timeTo = (int) (day.getTimeInMillis() / 1000);
+            int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
+            float goalFactor = HealthUtils.getStepsGoalFactor(timeTo);
+            @ColorInt int dayColor;
+            if (goalFactor >= 1) {
+                dayColor = Color.argb(128, 0, 255, 0); // Green
+            } else if (goalFactor >= 0.75) {
+                dayColor = Color.argb(128, 0, 128, 0); // Dark green
+            } else if (goalFactor >= 0.5) {
+                dayColor = Color.argb(128, 255, 255, 0); // Yellow
+            } else if (goalFactor > 0.25) {
+                dayColor = Color.argb(128, 255, 128, 0); // Orange
+            } else if (goalFactor > 0) {
+                dayColor = Color.argb(128, 255, 0, 0); // Red
+            } else {
+                dayColor = Color.argb(50, 128, 128, 128);
+            }
+            // Draw colored circle
             GradientDrawable backgroundDrawable = new GradientDrawable();
             backgroundDrawable.setShape(GradientDrawable.OVAL);
-            backgroundDrawable.setColor(Color.argb(50, 128, 128, 128));
+            backgroundDrawable.setColor(dayColor);
             text.setBackground(backgroundDrawable);
             text.setOnClickListener(v -> {
                 Intent resultIntent = new Intent();
