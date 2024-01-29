@@ -18,6 +18,7 @@ package nodomain.freeyourgadget.gadgetbridge.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -70,6 +71,12 @@ public class DashboardFragment extends Fragment {
         setHasOptionsMenu(true);
         textViewDate = dashboardView.findViewById(R.id.dashboard_date);
         gridLayout = dashboardView.findViewById(R.id.dashboard_gridlayout);
+
+        // Increase column count on landscape, tablets and open foldables
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        if (displayMetrics.widthPixels / displayMetrics.density >= 600) {
+            gridLayout.setColumnCount(4);
+        }
 
         arrowLeft = dashboardView.findViewById(R.id.arrow_left);
         arrowLeft.setOnClickListener(v -> {
