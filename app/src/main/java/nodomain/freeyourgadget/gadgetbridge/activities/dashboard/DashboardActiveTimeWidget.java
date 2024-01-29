@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -79,12 +80,12 @@ public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
     @Override
     protected void fillData() {
         // Update text representation
-        long totalActiveMinutes = getActiveMinutesTotal();
+        long totalActiveMinutes = HealthUtils.getActiveMinutesTotal(timeFrom, timeTo);
         String activeHours = String.format("%d", (int) Math.floor(totalActiveMinutes / 60f));
         String activeMinutes = String.format("%02d", (int) (totalActiveMinutes % 60f));
         activeTime.setText(activeHours + ":" + activeMinutes);
 
         // Draw gauge
-        activeTimeGauge.setImageBitmap(drawGauge(200, 15, color_active_time, getActiveMinutesGoalFactor()));
+        activeTimeGauge.setImageBitmap(drawGauge(200, 15, color_active_time, HealthUtils.getActiveMinutesGoalFactor(timeFrom, timeTo)));
     }
 }

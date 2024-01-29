@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -79,12 +80,12 @@ public class DashboardSleepWidget extends AbstractDashboardWidget {
     @Override
     protected void fillData() {
         // Update text representation
-        long totalSleepMinutes = getSleepMinutesTotal();
+        long totalSleepMinutes = HealthUtils.getSleepMinutesTotal(timeTo);
         String sleepHours = String.format("%d", (int) Math.floor(totalSleepMinutes / 60f));
         String sleepMinutes = String.format("%02d", (int) (totalSleepMinutes % 60f));
         sleepAmount.setText(sleepHours + ":" + sleepMinutes);
 
         // Draw gauge
-        sleepGauge.setImageBitmap(drawGauge(200, 15, color_light_sleep, getSleepMinutesGoalFactor()));
+        sleepGauge.setImageBitmap(drawGauge(200, 15, color_light_sleep, HealthUtils.getSleepMinutesGoalFactor(timeTo)));
     }
 }

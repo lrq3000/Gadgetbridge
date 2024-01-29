@@ -48,6 +48,7 @@ import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivityKind;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
+import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 /**
@@ -193,7 +194,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         try (DBHandler dbHandler = GBApplication.acquireDB()) {
             for (GBDevice dev : devices) {
                 if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                    List<? extends ActivitySample> activitySamples = getAllSamples(dbHandler, dev, timeFrom, timeTo);
+                    List<? extends ActivitySample> activitySamples = HealthUtils.getAllSamples(dbHandler, dev, timeFrom, timeTo);
                     allActivitySamples.addAll(activitySamples);
                     StepAnalysis stepAnalysis = new StepAnalysis();
                     stepSessions.addAll(stepAnalysis.calculateStepSessions(activitySamples));

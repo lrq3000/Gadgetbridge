@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -76,9 +77,9 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
 
     protected void fillData() {
         // Update text representation
-        stepsCount.setText(String.valueOf(getStepsTotal()));
+        stepsCount.setText(String.valueOf(HealthUtils.getStepsTotal(timeTo)));
 
         // Draw gauge
-        stepsGauge.setImageBitmap(drawGauge(200, 15, color_activity, getStepsGoalFactor()));
+        stepsGauge.setImageBitmap(drawGauge(200, 15, color_activity, HealthUtils.getStepsGoalFactor(timeTo)));
     }
 }

@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -109,19 +110,19 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
         paint.setStrokeWidth(barWidth);
 
         paint.setColor(color_activity);
-        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * getStepsGoalFactor(), false, paint);
+        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getStepsGoalFactor(timeTo), false, paint);
 
         barMargin += barWidth * 1.5;
         paint.setColor(color_distance);
-        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * getDistanceGoalFactor(), false, paint);
+        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getDistanceGoalFactor(timeTo), false, paint);
 
         barMargin += barWidth * 1.5;
         paint.setColor(color_active_time);
-        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * getActiveMinutesGoalFactor(), false, paint);
+        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getActiveMinutesGoalFactor(timeFrom, timeTo), false, paint);
 
         barMargin += barWidth * 1.5;
         paint.setColor(color_light_sleep);
-        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * getSleepMinutesGoalFactor(), false, paint);
+        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getSleepMinutesGoalFactor(timeTo), false, paint);
 
         goalsChart.setImageBitmap(bitmap);
     }

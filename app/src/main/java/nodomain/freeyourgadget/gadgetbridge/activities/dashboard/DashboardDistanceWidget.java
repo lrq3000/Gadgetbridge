@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.util.FormatUtils;
+import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -80,10 +81,10 @@ public class DashboardDistanceWidget extends AbstractDashboardWidget {
     @Override
     protected void fillData() {
         // Update text representation
-        String distanceFormatted = FormatUtils.getFormattedDistanceLabel(getDistanceTotal());
+        String distanceFormatted = FormatUtils.getFormattedDistanceLabel(HealthUtils.getDistanceTotal(timeTo));
         distanceText.setText(distanceFormatted);
 
         // Draw gauge
-        distanceGauge.setImageBitmap(drawGauge(200, 15, color_distance, getDistanceGoalFactor()));
+        distanceGauge.setImageBitmap(drawGauge(200, 15, color_distance, HealthUtils.getDistanceGoalFactor(timeTo)));
     }
 }
