@@ -17,6 +17,7 @@
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -59,6 +60,8 @@ import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 public class DashboardTodayWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardTodayWidget.class);
 
+    private View todayView;
+
     private boolean mode_24h;
 
     private PieChart chart_0_12;
@@ -87,7 +90,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View todayView = inflater.inflate(R.layout.dashboard_widget_today, container, false);
+        todayView = inflater.inflate(R.layout.dashboard_widget_today, container, false);
 
         // Determine whether to draw a single or a double chart. In case 24h mode is selected,
         // use just the outer chart (chart_12_24) for all data.
@@ -187,144 +190,158 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     }
 
     protected void fillData() {
-        // Retrieve activity data
-        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
-        List<ActivitySample> allActivitySamples = new ArrayList<>();
-        List<ActivitySession> stepSessions = new ArrayList<>();
-        try (DBHandler dbHandler = GBApplication.acquireDB()) {
-            for (GBDevice dev : devices) {
-                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                    List<? extends ActivitySample> activitySamples = HealthUtils.getAllSamples(dbHandler, dev, timeFrom, timeTo);
-                    allActivitySamples.addAll(activitySamples);
-                    StepAnalysis stepAnalysis = new StepAnalysis();
-                    stepSessions.addAll(stepAnalysis.calculateStepSessions(activitySamples));
-                }
+        todayView.post(new Runnable() {
+            @Override
+            public void run() {
+                FillDataAsyncTask myAsyncTask = new FillDataAsyncTask();
+                myAsyncTask.execute();
             }
-        } catch (Exception e) {
-            LOG.warn("Could not retrieve activity amounts: ", e);
-        }
+        });
+    }
 
-        // Integrate and chronologically order various data from multiple devices
-        List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
-        long midDaySecond = timeFrom + (12 * 60 * 60);
-        for (ActivitySample sample : allActivitySamples) {
-            // Handle only TYPE_NOT_WORN and TYPE_SLEEP (including variants) here
-            if (sample.getKind() != ActivityKind.TYPE_NOT_WORN && (sample.getKind() == ActivityKind.TYPE_NOT_MEASURED || (sample.getKind() & ActivityKind.TYPE_SLEEP) == 0))
-                continue;
-            if (generalizedActivities.size() > 0) {
-                GeneralizedActivity previous = generalizedActivities.get(generalizedActivities.size() - 1);
-                // Merge samples if the type is the same, and they are within a minute of each other
-                if (previous.activityKind == sample.getKind() && previous.timeTo > sample.getTimestamp() - 60) {
-                    // But only if the resulting activity doesn't cross the midday boundary in 12h mode
-                    if (mode_24h || sample.getTimestamp() + 60 < midDaySecond || previous.timeFrom > midDaySecond) {
-                        generalizedActivities.get(generalizedActivities.size() - 1).timeTo = sample.getTimestamp() + 60;
-                        continue;
+    private class FillDataAsyncTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            // Retrieve activity data
+            List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+            List<ActivitySample> allActivitySamples = new ArrayList<>();
+            List<ActivitySession> stepSessions = new ArrayList<>();
+            try (DBHandler dbHandler = GBApplication.acquireDB()) {
+                for (GBDevice dev : devices) {
+                    if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                        List<? extends ActivitySample> activitySamples = HealthUtils.getAllSamples(dbHandler, dev, timeFrom, timeTo);
+                        allActivitySamples.addAll(activitySamples);
+                        StepAnalysis stepAnalysis = new StepAnalysis();
+                        stepSessions.addAll(stepAnalysis.calculateStepSessions(activitySamples));
                     }
                 }
+            } catch (Exception e) {
+                LOG.warn("Could not retrieve activity amounts: ", e);
             }
-            generalizedActivities.add(new GeneralizedActivity(
-                    sample.getKind(),
-                    sample.getTimestamp(),
-                    sample.getTimestamp() + 60
-            ));
-        }
-        for (ActivitySession session : stepSessions) {
-            if (!mode_24h && session.getStartTime().getTime() / 1000 < midDaySecond && session.getEndTime().getTime() / 1000 > midDaySecond) {
-                generalizedActivities.add(new GeneralizedActivity(
-                        session.getActivityKind(),
-                        session.getStartTime().getTime() / 1000,
-                        midDaySecond
-                ));
-                generalizedActivities.add(new GeneralizedActivity(
-                        session.getActivityKind(),
-                        midDaySecond,
-                        session.getEndTime().getTime() / 1000
-                ));
-            } else {
-                generalizedActivities.add(new GeneralizedActivity(
-                        session.getActivityKind(),
-                        session.getStartTime().getTime() / 1000,
-                        session.getEndTime().getTime() / 1000
-                ));
-            }
-        }
-        Collections.sort(generalizedActivities, (o1, o2) -> (int) (o1.timeFrom - o2.timeFrom));
 
-        // Add pie slice entries
-        ArrayList<PieEntry> entries_0_12 = new ArrayList<>();
-        ArrayList<Integer> colors_0_12 = new ArrayList<>();
-        ArrayList<PieEntry> entries_12_24 = new ArrayList<>();
-        ArrayList<Integer> colors_12_24 = new ArrayList<>();
-        long secondIndex = timeFrom;
-        for (GeneralizedActivity activity : generalizedActivities) {
-            // FIXME: correctly merge parallel activities from multiple devices
-            // Skip earlier sessions
-            if (activity.timeFrom < secondIndex) continue;
-            // Use correct entries list for this part of the day
-            ArrayList<PieEntry> entries = entries_0_12;
-            ArrayList<Integer> colors = colors_0_12;
-            if (mode_24h || activity.timeFrom >= midDaySecond) {
-                entries = entries_12_24;
-                colors = colors_12_24;
+            // Integrate and chronologically order various data from multiple devices
+            List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
+            long midDaySecond = timeFrom + (12 * 60 * 60);
+            for (ActivitySample sample : allActivitySamples) {
+                // Handle only TYPE_NOT_WORN and TYPE_SLEEP (including variants) here
+                if (sample.getKind() != ActivityKind.TYPE_NOT_WORN && (sample.getKind() == ActivityKind.TYPE_NOT_MEASURED || (sample.getKind() & ActivityKind.TYPE_SLEEP) == 0))
+                    continue;
+                if (generalizedActivities.size() > 0) {
+                    GeneralizedActivity previous = generalizedActivities.get(generalizedActivities.size() - 1);
+                    // Merge samples if the type is the same, and they are within a minute of each other
+                    if (previous.activityKind == sample.getKind() && previous.timeTo > sample.getTimestamp() - 60) {
+                        // But only if the resulting activity doesn't cross the midday boundary in 12h mode
+                        if (mode_24h || sample.getTimestamp() + 60 < midDaySecond || previous.timeFrom > midDaySecond) {
+                            generalizedActivities.get(generalizedActivities.size() - 1).timeTo = sample.getTimestamp() + 60;
+                            continue;
+                        }
+                    }
+                }
+                generalizedActivities.add(new GeneralizedActivity(
+                        sample.getKind(),
+                        sample.getTimestamp(),
+                        sample.getTimestamp() + 60
+                ));
             }
-            // Draw inactive slice
-            if (activity.timeFrom > secondIndex) {
-                entries.add(new PieEntry(activity.timeFrom - secondIndex, "Inactive"));
-                colors.add(color_worn);
+            for (ActivitySession session : stepSessions) {
+                if (!mode_24h && session.getStartTime().getTime() / 1000 < midDaySecond && session.getEndTime().getTime() / 1000 > midDaySecond) {
+                    generalizedActivities.add(new GeneralizedActivity(
+                            session.getActivityKind(),
+                            session.getStartTime().getTime() / 1000,
+                            midDaySecond
+                    ));
+                    generalizedActivities.add(new GeneralizedActivity(
+                            session.getActivityKind(),
+                            midDaySecond,
+                            session.getEndTime().getTime() / 1000
+                    ));
+                } else {
+                    generalizedActivities.add(new GeneralizedActivity(
+                            session.getActivityKind(),
+                            session.getStartTime().getTime() / 1000,
+                            session.getEndTime().getTime() / 1000
+                    ));
+                }
             }
-            // Draw activity slices
-            if (activity.activityKind == ActivityKind.TYPE_NOT_WORN) {
-                entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Not worn"));
-                colors.add(color_not_worn);
-                secondIndex = activity.timeTo;
-            } else if (activity.activityKind == ActivityKind.TYPE_LIGHT_SLEEP || activity.activityKind == ActivityKind.TYPE_SLEEP) {
-                entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Light sleep"));
-                colors.add(color_light_sleep);
-                secondIndex = activity.timeTo;
-            } else if (activity.activityKind == ActivityKind.TYPE_DEEP_SLEEP) {
-                entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Deep sleep"));
-                colors.add(color_deep_sleep);
-                secondIndex = activity.timeTo;
-            } else {
-                entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Active"));
-                colors.add(color_activity);
-                secondIndex = activity.timeTo;
-            }
-        }
-        // Fill remaining time until midnight
-        long currentTime = Calendar.getInstance().getTimeInMillis() / 1000;
-        if (!mode_24h && currentTime > timeFrom && currentTime < midDaySecond) {
-            // Fill with unknown slice up until current time
-            entries_0_12.add(new PieEntry(currentTime - secondIndex, "Unknown"));
-            colors_0_12.add(color_worn);
-            // Draw transparent slice for remaining time until midday
-            entries_0_12.add(new PieEntry(midDaySecond - currentTime, "Empty"));
-            colors_0_12.add(Color.TRANSPARENT);
-        }
-        if ((mode_24h || currentTime >= midDaySecond) && currentTime < timeTo) {
-            // Fill with unknown slice up until current time
-            entries_12_24.add(new PieEntry(currentTime - secondIndex, "Unknown"));
-            colors_12_24.add(color_worn);
-            // Draw transparent slice for remaining time until midnight
-            entries_12_24.add(new PieEntry(timeTo - currentTime, "Empty"));
-            colors_12_24.add(Color.TRANSPARENT);
-        }
+            Collections.sort(generalizedActivities, (o1, o2) -> (int) (o1.timeFrom - o2.timeFrom));
 
-        // Draw charts
-        if (!mode_24h) {
-            PieDataSet dataSet_0_12 = new PieDataSet(entries_0_12, "Today 0-12h");
-            dataSet_0_12.setSliceSpace(0f);
-            dataSet_0_12.setDrawValues(false);
-            dataSet_0_12.setColors(colors_0_12);
-            chart_0_12.setData(new PieData(dataSet_0_12));
-            chart_0_12.invalidate();
+            // Add pie slice entries
+            ArrayList<PieEntry> entries_0_12 = new ArrayList<>();
+            ArrayList<Integer> colors_0_12 = new ArrayList<>();
+            ArrayList<PieEntry> entries_12_24 = new ArrayList<>();
+            ArrayList<Integer> colors_12_24 = new ArrayList<>();
+            long secondIndex = timeFrom;
+            for (GeneralizedActivity activity : generalizedActivities) {
+                // FIXME: correctly merge parallel activities from multiple devices
+                // Skip earlier sessions
+                if (activity.timeFrom < secondIndex) continue;
+                // Use correct entries list for this part of the day
+                ArrayList<PieEntry> entries = entries_0_12;
+                ArrayList<Integer> colors = colors_0_12;
+                if (mode_24h || activity.timeFrom >= midDaySecond) {
+                    entries = entries_12_24;
+                    colors = colors_12_24;
+                }
+                // Draw inactive slice
+                if (activity.timeFrom > secondIndex) {
+                    entries.add(new PieEntry(activity.timeFrom - secondIndex, "Inactive"));
+                    colors.add(color_worn);
+                }
+                // Draw activity slices
+                if (activity.activityKind == ActivityKind.TYPE_NOT_WORN) {
+                    entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Not worn"));
+                    colors.add(color_not_worn);
+                    secondIndex = activity.timeTo;
+                } else if (activity.activityKind == ActivityKind.TYPE_LIGHT_SLEEP || activity.activityKind == ActivityKind.TYPE_SLEEP) {
+                    entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Light sleep"));
+                    colors.add(color_light_sleep);
+                    secondIndex = activity.timeTo;
+                } else if (activity.activityKind == ActivityKind.TYPE_DEEP_SLEEP) {
+                    entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Deep sleep"));
+                    colors.add(color_deep_sleep);
+                    secondIndex = activity.timeTo;
+                } else {
+                    entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Active"));
+                    colors.add(color_activity);
+                    secondIndex = activity.timeTo;
+                }
+            }
+            // Fill remaining time until midnight
+            long currentTime = Calendar.getInstance().getTimeInMillis() / 1000;
+            if (!mode_24h && currentTime > timeFrom && currentTime < midDaySecond) {
+                // Fill with unknown slice up until current time
+                entries_0_12.add(new PieEntry(currentTime - secondIndex, "Unknown"));
+                colors_0_12.add(color_worn);
+                // Draw transparent slice for remaining time until midday
+                entries_0_12.add(new PieEntry(midDaySecond - currentTime, "Empty"));
+                colors_0_12.add(Color.TRANSPARENT);
+            }
+            if ((mode_24h || currentTime >= midDaySecond) && currentTime < timeTo) {
+                // Fill with unknown slice up until current time
+                entries_12_24.add(new PieEntry(currentTime - secondIndex, "Unknown"));
+                colors_12_24.add(color_worn);
+                // Draw transparent slice for remaining time until midnight
+                entries_12_24.add(new PieEntry(timeTo - currentTime, "Empty"));
+                colors_12_24.add(Color.TRANSPARENT);
+            }
+
+            // Draw charts
+            if (!mode_24h) {
+                PieDataSet dataSet_0_12 = new PieDataSet(entries_0_12, "Today 0-12h");
+                dataSet_0_12.setSliceSpace(0f);
+                dataSet_0_12.setDrawValues(false);
+                dataSet_0_12.setColors(colors_0_12);
+                chart_0_12.setData(new PieData(dataSet_0_12));
+                chart_0_12.invalidate();
+            }
+            PieDataSet dataSet_12_24 = new PieDataSet(entries_12_24, "Today 12-24h");
+            dataSet_12_24.setSliceSpace(0f);
+            dataSet_12_24.setDrawValues(false);
+            dataSet_12_24.setColors(colors_12_24);
+            chart_12_24.setData(new PieData(dataSet_12_24));
+            chart_12_24.invalidate();
+            return null;
         }
-        PieDataSet dataSet_12_24 = new PieDataSet(entries_12_24, "Today 12-24h");
-        dataSet_12_24.setSliceSpace(0f);
-        dataSet_12_24.setDrawValues(false);
-        dataSet_12_24.setColors(colors_12_24);
-        chart_12_24.setData(new PieData(dataSet_12_24));
-        chart_12_24.invalidate();
     }
 
     private class GeneralizedActivity {

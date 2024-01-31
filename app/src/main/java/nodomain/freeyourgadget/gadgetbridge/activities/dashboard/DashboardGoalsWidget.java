@@ -19,6 +19,7 @@ package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -43,6 +44,7 @@ import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
  */
 public class DashboardGoalsWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardGoalsWidget.class);
+    private View goalsView;
     private ImageView goalsChart;
 
     public DashboardGoalsWidget() {
@@ -68,11 +70,11 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View todayView = inflater.inflate(R.layout.dashboard_widget_goals, container, false);
-        goalsChart = todayView.findViewById(R.id.dashboard_goals_chart);
+        goalsView = inflater.inflate(R.layout.dashboard_widget_goals, container, false);
+        goalsChart = goalsView.findViewById(R.id.dashboard_goals_chart);
 
         // Initialize legend
-        TextView legend = todayView.findViewById(R.id.dashboard_goals_legend);
+        TextView legend = goalsView.findViewById(R.id.dashboard_goals_legend);
         SpannableString l_steps = new SpannableString("■ " + getString(R.string.steps));
         l_steps.setSpan(new ForegroundColorSpan(color_activity), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableString l_distance = new SpannableString("■ " + getString(R.string.distance));
@@ -86,7 +88,7 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
 
         fillData();
 
-        return todayView;
+        return goalsView;
     }
 
     @Override
@@ -96,34 +98,54 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
     }
 
     protected void fillData() {
-        int width = 230;
-        int height = 230;
-        int barWidth = 10;
-        int barMargin = (int) Math.ceil(barWidth / 2f);
+        goalsView.post(new Runnable() {
+            @Override
+            public void run() {
+                FillDataAsyncTask myAsyncTask = new FillDataAsyncTask();
+                myAsyncTask.execute();
+            }
+        });
+    }
 
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(barWidth);
+    private class FillDataAsyncTask extends AsyncTask<Void, Void, Void> {
+        private Bitmap goalsBitmap;
 
-        paint.setColor(color_activity);
-        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getStepsGoalFactor(timeTo), false, paint);
+        @Override
+        protected Void doInBackground(Void... params) {
+            int width = 500;
+            int height = 500;
+            int barWidth = 20;
+            int barMargin = (int) Math.ceil(barWidth / 2f);
 
-        barMargin += barWidth * 1.5;
-        paint.setColor(color_distance);
-        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getDistanceGoalFactor(timeTo), false, paint);
+            goalsBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(goalsBitmap);
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setStrokeWidth(barWidth);
 
-        barMargin += barWidth * 1.5;
-        paint.setColor(color_active_time);
-        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getActiveMinutesGoalFactor(timeFrom, timeTo), false, paint);
+            paint.setColor(color_activity);
+            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getStepsGoalFactor(timeTo), false, paint);
 
-        barMargin += barWidth * 1.5;
-        paint.setColor(color_light_sleep);
-        canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getSleepMinutesGoalFactor(timeTo), false, paint);
+            barMargin += barWidth * 1.5;
+            paint.setColor(color_distance);
+            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getDistanceGoalFactor(timeTo), false, paint);
 
-        goalsChart.setImageBitmap(bitmap);
+            barMargin += barWidth * 1.5;
+            paint.setColor(color_active_time);
+            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getActiveMinutesGoalFactor(timeFrom, timeTo), false, paint);
+
+            barMargin += barWidth * 1.5;
+            paint.setColor(color_light_sleep);
+            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getSleepMinutesGoalFactor(timeTo), false, paint);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void unused) {
+            super.onPostExecute(unused);
+            goalsChart.setImageBitmap(goalsBitmap);
+        }
     }
 }
