@@ -109,11 +109,18 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
 
     private class FillDataAsyncTask extends AsyncTask<Void, Void, Void> {
         private Bitmap goalsBitmap;
+        int width = 500;
+        int height = 500;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            goalsBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            goalsChart.setImageBitmap(goalsBitmap);
+        }
 
         @Override
         protected Void doInBackground(Void... params) {
-            int width = 500;
-            int height = 500;
             int barWidth = 20;
             int barMargin = (int) Math.ceil(barWidth / 2f);
 

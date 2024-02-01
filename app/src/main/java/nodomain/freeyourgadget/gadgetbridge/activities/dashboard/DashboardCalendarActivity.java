@@ -19,6 +19,7 @@ package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -34,6 +35,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.AbstractGBActivity;
@@ -43,6 +46,8 @@ import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
 public class DashboardCalendarActivity extends AbstractGBActivity {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardCalendarActivity.class);
     public static String EXTRA_TIMESTAMP = "dashboard_calendar_chosen_day";
+    private final ConcurrentHashMap<Calendar, TextView> dayCells = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer, Integer> dayColors = new ConcurrentHashMap<>();
 
     TextView monthTextView;
     TextView arrowLeft;
@@ -77,8 +82,20 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
         draw();
     }
 
+    private void displayColorsAsync() {
+        calendarGrid.post(new Runnable() {
+            @Override
+            public void run() {
+                FillDataAsyncTask myAsyncTask = new FillDataAsyncTask();
+                myAsyncTask.execute();
+            }
+        });
+    }
+
     private void draw() {
         // Remove previous calendar days
+        dayCells.clear();
+        dayColors.clear();
         calendarGrid.removeAllViews();
         // Update month display
         SimpleDateFormat monthFormat = new SimpleDateFormat("LLLL yyyy", Locale.getDefault());
@@ -122,6 +139,8 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
             createDateCell(drawCal, cellSize, clickable);
             drawCal.add(Calendar.DAY_OF_MONTH, 1);
         }
+        // Asynchronously determine and display goal colors
+        displayColorsAsync();
     }
 
     private TextView prepareGridElement(int cellSize) {
@@ -146,40 +165,67 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
     }
 
     private void createDateCell(Calendar day, int cellSize, boolean clickable) {
-        final long timestamp = day.getTimeInMillis();
         TextView text = prepareGridElement(cellSize);
         text.setText(String.valueOf(day.get(Calendar.DAY_OF_MONTH)));
         if (clickable) {
-            // Determine day color by the amount of the steps goal reached
-            int timeTo = (int) (day.getTimeInMillis() / 1000);
-            int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
-            float goalFactor = HealthUtils.getStepsGoalFactor(timeTo);
-            @ColorInt int dayColor;
-            if (goalFactor >= 1) {
-                dayColor = Color.argb(128, 0, 255, 0); // Green
-            } else if (goalFactor >= 0.75) {
-                dayColor = Color.argb(128, 0, 128, 0); // Dark green
-            } else if (goalFactor >= 0.5) {
-                dayColor = Color.argb(128, 255, 255, 0); // Yellow
-            } else if (goalFactor > 0.25) {
-                dayColor = Color.argb(128, 255, 128, 0); // Orange
-            } else if (goalFactor > 0) {
-                dayColor = Color.argb(128, 255, 0, 0); // Red
-            } else {
-                dayColor = Color.argb(50, 128, 128, 128);
-            }
-            // Draw colored circle
-            GradientDrawable backgroundDrawable = new GradientDrawable();
-            backgroundDrawable.setShape(GradientDrawable.OVAL);
-            backgroundDrawable.setColor(dayColor);
-            text.setBackground(backgroundDrawable);
-            text.setOnClickListener(v -> {
-                Intent resultIntent = new Intent();
-                resultIntent.putExtra(EXTRA_TIMESTAMP, timestamp);
-                setResult(RESULT_OK, resultIntent);
-                finish();
-            });
+            // Save textview for later coloring
+            dayCells.put((Calendar) day.clone(), text);
         }
         calendarGrid.addView(text);
+    }
+
+    private class FillDataAsyncTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            for (Calendar day : dayCells.keySet()) {
+                // Determine day color by the amount of the steps goal reached
+                int timeTo = (int) (day.getTimeInMillis() / 1000);
+                int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
+                float goalFactor = HealthUtils.getStepsGoalFactor(timeTo);
+                @ColorInt int dayColor;
+                if (goalFactor >= 1) {
+                    dayColor = Color.argb(128, 0, 255, 0); // Green
+                } else if (goalFactor >= 0.75) {
+                    dayColor = Color.argb(128, 0, 128, 0); // Dark green
+                } else if (goalFactor >= 0.5) {
+                    dayColor = Color.argb(128, 255, 255, 0); // Yellow
+                } else if (goalFactor > 0.25) {
+                    dayColor = Color.argb(128, 255, 128, 0); // Orange
+                } else if (goalFactor > 0) {
+                    dayColor = Color.argb(128, 255, 0, 0); // Red
+                } else {
+                    dayColor = Color.argb(50, 128, 128, 128);
+                }
+                dayColors.put(day.get(Calendar.DAY_OF_MONTH), dayColor);
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void unused) {
+            super.onPostExecute(unused);
+            for (Map.Entry<Calendar, TextView> entry : dayCells.entrySet()) {
+                Calendar day = entry.getKey();
+                TextView text = entry.getValue();
+                @ColorInt int dayColor;
+                try {
+                    dayColor = dayColors.get(day.get(Calendar.DAY_OF_MONTH));
+                } catch (NullPointerException e) {
+                    continue;
+                }
+                final long timestamp = day.getTimeInMillis();
+                // Draw colored circle
+                GradientDrawable backgroundDrawable = new GradientDrawable();
+                backgroundDrawable.setShape(GradientDrawable.OVAL);
+                backgroundDrawable.setColor(dayColor);
+                text.setBackground(backgroundDrawable);
+                text.setOnClickListener(v -> {
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra(EXTRA_TIMESTAMP, timestamp);
+                    setResult(RESULT_OK, resultIntent);
+                    finish();
+                });
+            }
+        }
     }
 }
