@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -77,13 +78,35 @@ public class DashboardSleepWidget extends AbstractDashboardWidget {
 
     @Override
     protected void fillData() {
-        // Update text representation
-        long totalSleepMinutes = dashboardData.getSleepMinutesTotal();
-        String sleepHours = String.format("%d", (int) Math.floor(totalSleepMinutes / 60f));
-        String sleepMinutes = String.format("%02d", (int) (totalSleepMinutes % 60f));
-        sleepAmount.setText(sleepHours + ":" + sleepMinutes);
+        sleepGauge.post(new Runnable() {
+            @Override
+            public void run() {
+                FillDataAsyncTask myAsyncTask = new FillDataAsyncTask();
+                myAsyncTask.execute();
+            }
+        });
+    }
 
-        // Draw gauge
-        sleepGauge.setImageBitmap(drawGauge(200, 15, color_light_sleep, dashboardData.getSleepMinutesGoalFactor()));
+    private class FillDataAsyncTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            dashboardData.getSleepMinutesTotal();
+            dashboardData.getSleepMinutesGoalFactor();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void unused) {
+            super.onPostExecute(unused);
+
+            // Update text representation
+            long totalSleepMinutes = dashboardData.getSleepMinutesTotal();
+            String sleepHours = String.format("%d", (int) Math.floor(totalSleepMinutes / 60f));
+            String sleepMinutes = String.format("%02d", (int) (totalSleepMinutes % 60f));
+            sleepAmount.setText(sleepHours + ":" + sleepMinutes);
+
+            // Draw gauge
+            sleepGauge.setImageBitmap(drawGauge(200, 15, color_light_sleep, dashboardData.getSleepMinutesGoalFactor()));
+        }
     }
 }

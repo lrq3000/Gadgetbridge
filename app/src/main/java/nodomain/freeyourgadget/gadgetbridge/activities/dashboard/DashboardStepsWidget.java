@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -73,11 +74,35 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
         if (stepsCount != null && stepsGauge != null) fillData();
     }
 
+    @Override
     protected void fillData() {
-        // Update text representation
-        stepsCount.setText(String.valueOf(dashboardData.getStepsTotal()));
+        stepsGauge.post(new Runnable() {
+            @Override
+            public void run() {
+                FillDataAsyncTask myAsyncTask = new FillDataAsyncTask();
+                myAsyncTask.execute();
+            }
+        });
+    }
 
-        // Draw gauge
-        stepsGauge.setImageBitmap(drawGauge(200, 15, color_activity, dashboardData.getStepsGoalFactor()));
+    private class FillDataAsyncTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            dashboardData.getStepsTotal();
+            dashboardData.getStepsGoalFactor();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void unused) {
+            super.onPostExecute(unused);
+
+            // Update text representation
+            stepsCount.setText(String.valueOf(dashboardData.getStepsTotal()));
+
+            // Draw gauge
+            stepsGauge.setImageBitmap(drawGauge(200, 15, color_activity, dashboardData.getStepsGoalFactor()));
+
+        }
     }
 }

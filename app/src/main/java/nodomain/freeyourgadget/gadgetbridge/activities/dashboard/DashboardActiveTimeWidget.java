@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -77,13 +78,35 @@ public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
 
     @Override
     protected void fillData() {
-        // Update text representation
-        long totalActiveMinutes = dashboardData.getActiveMinutesTotal();
-        String activeHours = String.format("%d", (int) Math.floor(totalActiveMinutes / 60f));
-        String activeMinutes = String.format("%02d", (int) (totalActiveMinutes % 60f));
-        activeTime.setText(activeHours + ":" + activeMinutes);
+        activeTimeGauge.post(new Runnable() {
+            @Override
+            public void run() {
+                FillDataAsyncTask myAsyncTask = new FillDataAsyncTask();
+                myAsyncTask.execute();
+            }
+        });
+    }
 
-        // Draw gauge
-        activeTimeGauge.setImageBitmap(drawGauge(200, 15, color_active_time, dashboardData.getActiveMinutesGoalFactor()));
+    private class FillDataAsyncTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            dashboardData.getActiveMinutesTotal();
+            dashboardData.getActiveMinutesGoalFactor();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void unused) {
+            super.onPostExecute(unused);
+
+            // Update text representation
+            long totalActiveMinutes = dashboardData.getActiveMinutesTotal();
+            String activeHours = String.format("%d", (int) Math.floor(totalActiveMinutes / 60f));
+            String activeMinutes = String.format("%02d", (int) (totalActiveMinutes % 60f));
+            activeTime.setText(activeHours + ":" + activeMinutes);
+
+            // Draw gauge
+            activeTimeGauge.setImageBitmap(drawGauge(200, 15, color_active_time, dashboardData.getActiveMinutesGoalFactor()));
+        }
     }
 }
