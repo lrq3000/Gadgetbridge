@@ -114,6 +114,12 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             chart_12_24.setTransparentCircleRadius(91f);
             chart_12_24.setTransparentCircleColor(Color.TRANSPARENT);
         }
+        ArrayList<PieEntry> emptyChartEntries = new ArrayList<>();
+        PieDataSet emptyChartDataSet = new PieDataSet(emptyChartEntries, "");
+        emptyChartDataSet.setDrawValues(false);
+        emptyChartDataSet.setColor(Color.TRANSPARENT);
+        PieData emptyChartData = new PieData(emptyChartDataSet);
+        chart_12_24.setData(emptyChartData);
 
         // Initialize inner chart
         chart_0_12 = todayView.findViewById(R.id.dashboard_piechart_today_0_12);
@@ -130,6 +136,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             chart_0_12.setRotationEnabled(false);
             chart_0_12.setDrawEntryLabels(false);
             chart_0_12.setHighlightPerTapEnabled(false);
+            chart_0_12.setData(emptyChartData);
         }
 
         // Initialize legend
