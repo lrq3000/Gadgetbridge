@@ -28,14 +28,14 @@ import androidx.fragment.app.Fragment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
+
 public abstract class AbstractDashboardWidget extends Fragment {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractDashboardWidget.class);
 
-    protected static String ARG_TIME_FROM = "dashboard_widget_argument_time_from";
-    protected static String ARG_TIME_TO = "dashboard_widget_argument_time_to";
+    protected static String ARG_DASHBOARD_DATA = "dashboard_widget_argument_data";
 
-    protected int timeFrom;
-    protected int timeTo;
+    protected DashboardFragment.DashboardData dashboardData;
 
     protected @ColorInt int color_not_worn = Color.argb(75, 128, 128, 128);
     protected @ColorInt int color_worn = Color.rgb(128, 128, 128);
@@ -49,22 +49,21 @@ public abstract class AbstractDashboardWidget extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            timeFrom = getArguments().getInt(ARG_TIME_FROM);
-            timeTo = getArguments().getInt(ARG_TIME_TO);
+            dashboardData = (DashboardFragment.DashboardData) getArguments().getSerializable(ARG_DASHBOARD_DATA);
         }
     }
 
 
-    public void setTimespan(int timeFrom, int timeTo) {
-        this.timeFrom = timeFrom;
-        this.timeTo = timeTo;
+    public void update() {
         fillData();
     }
 
     protected abstract void fillData();
 
     /**
-     * @param width Bitmap width in pixels
+     * @param width Bitmap width in pixels        this.timeFrom = timeFrom;
+        this.timeTo = timeTo;
+
      * @param barWidth Gauge bar width in pixels
      * @param filledColor Color of the filled part of the gauge
      * @param filledFactor Factor between 0 and 1 that determines the amount of the gauge that should be filled

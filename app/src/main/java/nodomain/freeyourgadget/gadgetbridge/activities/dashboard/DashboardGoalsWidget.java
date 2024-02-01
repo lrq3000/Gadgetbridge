@@ -35,7 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
+import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -55,15 +55,13 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param timeFrom Start time in seconds since Unix epoch.
-     * @param timeTo End time in seconds since Unix epoch.
+     * @param dashboardData An instance of DashboardFragment.DashboardData.
      * @return A new instance of fragment DashboardGoalsWidget.
      */
-    public static DashboardGoalsWidget newInstance(int timeFrom, int timeTo) {
+    public static DashboardGoalsWidget newInstance(DashboardFragment.DashboardData dashboardData) {
         DashboardGoalsWidget fragment = new DashboardGoalsWidget();
         Bundle args = new Bundle();
-        args.putInt(ARG_TIME_FROM, timeFrom);
-        args.putInt(ARG_TIME_TO, timeTo);
+        args.putSerializable(ARG_DASHBOARD_DATA, dashboardData);
         fragment.setArguments(args);
         return fragment;
     }
@@ -133,19 +131,19 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
             paint.setStrokeWidth(barWidth);
 
             paint.setColor(color_activity);
-            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getStepsGoalFactor(timeTo), false, paint);
+            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * dashboardData.getStepsGoalFactor(), false, paint);
 
             barMargin += barWidth * 1.5;
             paint.setColor(color_distance);
-            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getDistanceGoalFactor(timeTo), false, paint);
+            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * dashboardData.getDistanceGoalFactor(), false, paint);
 
             barMargin += barWidth * 1.5;
             paint.setColor(color_active_time);
-            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getActiveMinutesGoalFactor(timeFrom, timeTo), false, paint);
+            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * dashboardData.getActiveMinutesGoalFactor(), false, paint);
 
             barMargin += barWidth * 1.5;
             paint.setColor(color_light_sleep);
-            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * HealthUtils.getSleepMinutesGoalFactor(timeTo), false, paint);
+            canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * dashboardData.getSleepMinutesGoalFactor(), false, paint);
             return null;
         }
 

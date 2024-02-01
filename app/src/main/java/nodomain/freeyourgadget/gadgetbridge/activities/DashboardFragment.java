@@ -35,6 +35,7 @@ import androidx.gridlayout.widget.GridLayout;
 
 import com.google.android.material.card.MaterialCardView;
 
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -49,6 +50,7 @@ import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardSleepW
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardStepsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardTodayWidget;
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
+import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 public class DashboardFragment extends Fragment {
@@ -63,6 +65,7 @@ public class DashboardFragment extends Fragment {
     private DashboardDistanceWidget distanceWidget;
     private DashboardActiveTimeWidget activeTimeWidget;
     private DashboardSleepWidget sleepWidget;
+    private DashboardData dashboardData = new DashboardData();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -144,8 +147,9 @@ public class DashboardFragment extends Fragment {
         day.set(Calendar.HOUR_OF_DAY, 23);
         day.set(Calendar.MINUTE, 59);
         day.set(Calendar.SECOND, 59);
-        int timeTo = (int) (day.getTimeInMillis() / 1000);
-        int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
+        dashboardData.clear();
+        dashboardData.timeTo = (int) (day.getTimeInMillis() / 1000);
+        dashboardData.timeFrom = DateTimeUtils.shiftDays(dashboardData.timeTo, -1);
 
         Calendar today = GregorianCalendar.getInstance();
         if (DateTimeUtils.isSameDay(today, day)) {
@@ -161,50 +165,50 @@ public class DashboardFragment extends Fragment {
 
         if (prefs.getBoolean("dashboard_widget_today_enabled", true)) {
             if (todayWidget == null) {
-                todayWidget = DashboardTodayWidget.newInstance(timeFrom, timeTo);
+                todayWidget = DashboardTodayWidget.newInstance(dashboardData);
                 createWidget(todayWidget, cardsEnabled, 2);
             } else {
-                todayWidget.setTimespan(timeFrom, timeTo);
+                todayWidget.update();
             }
         }
         if (prefs.getBoolean("dashboard_widget_goals_enabled", true)) {
             if (goalsWidget == null) {
-                goalsWidget = DashboardGoalsWidget.newInstance(timeFrom, timeTo);
+                goalsWidget = DashboardGoalsWidget.newInstance(dashboardData);
                 createWidget(goalsWidget, cardsEnabled, 2);
             } else {
-                goalsWidget.setTimespan(timeFrom, timeTo);
+                goalsWidget.update();
             }
         }
         if (prefs.getBoolean("dashboard_widget_steps_enabled", true)) {
             if (stepsWidget == null) {
-                stepsWidget = DashboardStepsWidget.newInstance(timeFrom, timeTo);
+                stepsWidget = DashboardStepsWidget.newInstance(dashboardData);
                 createWidget(stepsWidget, cardsEnabled, 1);
             } else {
-                stepsWidget.setTimespan(timeFrom, timeTo);
+                stepsWidget.update();
             }
         }
         if (prefs.getBoolean("dashboard_widget_distance_enabled", true)) {
             if (distanceWidget == null) {
-                distanceWidget = DashboardDistanceWidget.newInstance(timeFrom, timeTo);
+                distanceWidget = DashboardDistanceWidget.newInstance(dashboardData);
                 createWidget(distanceWidget, cardsEnabled, 1);
             } else {
-                distanceWidget.setTimespan(timeFrom, timeTo);
+                distanceWidget.update();
             }
         }
         if (prefs.getBoolean("dashboard_widget_active_time_enabled", true)) {
             if (activeTimeWidget == null) {
-                activeTimeWidget = DashboardActiveTimeWidget.newInstance(timeFrom, timeTo);
+                activeTimeWidget = DashboardActiveTimeWidget.newInstance(dashboardData);
                 createWidget(activeTimeWidget, cardsEnabled, 1);
             } else {
-                activeTimeWidget.setTimespan(timeFrom, timeTo);
+                activeTimeWidget.update();
             }
         }
         if (prefs.getBoolean("dashboard_widget_sleep_enabled", true)) {
             if (sleepWidget == null) {
-                sleepWidget = DashboardSleepWidget.newInstance(timeFrom, timeTo);
+                sleepWidget = DashboardSleepWidget.newInstance(dashboardData);
                 createWidget(sleepWidget, cardsEnabled, 1);
             } else {
-                sleepWidget.setTimespan(timeFrom, timeTo);
+                sleepWidget.update();
             }
         }
     }
@@ -239,6 +243,84 @@ public class DashboardFragment extends Fragment {
         } else {
             fragment.setLayoutParams(layoutParams);
             gridLayout.addView(fragment);
+        }
+    }
+
+    /**
+     * This class serves as a data collection object for all data points used by the various
+     * dashboard widgets. Since retrieving this data can be costly, this class makes sure it will
+     * only be done once. It will be passed to every widget, making sure they have the necessary
+     * data available.
+     */
+    public static class DashboardData implements Serializable {
+        public int timeFrom;
+        public int timeTo;
+        private int stepsTotal;
+        private float stepsGoalFactor;
+        private long sleepTotalMinutes;
+        private float sleepGoalFactor;
+        private float distanceTotalMeters;
+        private float distanceGoalFactor;
+        private long activeMinutesTotal;
+        private float activeMinutesGoalFactor;
+
+        public void clear() {
+            stepsTotal = 0;
+            stepsGoalFactor = 0;
+            sleepTotalMinutes = 0;
+            sleepGoalFactor = 0;
+            distanceTotalMeters = 0;
+            distanceGoalFactor = 0;
+            activeMinutesTotal = 0;
+            activeMinutesGoalFactor = 0;
+        }
+
+        public synchronized int getStepsTotal() {
+            if (stepsTotal == 0)
+                stepsTotal = HealthUtils.getStepsTotal(timeTo);
+            return stepsTotal;
+        }
+
+        public synchronized float getStepsGoalFactor() {
+            if (stepsGoalFactor == 0)
+                stepsGoalFactor = HealthUtils.getStepsGoalFactor(timeTo);
+            return stepsGoalFactor;
+        }
+
+        public synchronized float getDistanceTotal() {
+            if (distanceTotalMeters == 0)
+                distanceTotalMeters = HealthUtils.getDistanceTotal(timeTo);
+            return distanceTotalMeters;
+        }
+
+        public synchronized float getDistanceGoalFactor() {
+            if (distanceGoalFactor == 0)
+                distanceGoalFactor = HealthUtils.getDistanceGoalFactor(timeTo);
+            return distanceGoalFactor;
+        }
+
+        public synchronized long getActiveMinutesTotal() {
+            if (activeMinutesTotal == 0)
+                activeMinutesTotal = HealthUtils.getActiveMinutesTotal(timeFrom, timeTo);
+            return activeMinutesTotal;
+        }
+
+        public synchronized float getActiveMinutesGoalFactor() {
+            if (activeMinutesGoalFactor == 0)
+                activeMinutesGoalFactor = HealthUtils.getActiveMinutesGoalFactor(timeFrom, timeTo);
+            return activeMinutesGoalFactor;
+        }
+
+        public synchronized long getSleepMinutesTotal() {
+            if (sleepTotalMinutes == 0)
+                sleepTotalMinutes = HealthUtils.getSleepMinutesTotal(timeTo);
+            return sleepTotalMinutes;
+        }
+
+        public synchronized float getSleepMinutesGoalFactor() {
+            if (sleepGoalFactor == 0)
+                sleepGoalFactor = HealthUtils.getSleepMinutesGoalFactor(timeTo);
+            return sleepGoalFactor;
         }
     }
 }

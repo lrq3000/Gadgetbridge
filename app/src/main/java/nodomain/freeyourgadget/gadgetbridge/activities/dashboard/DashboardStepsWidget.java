@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
+import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -47,15 +47,13 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param timeFrom Start time in seconds since Unix epoch.
-     * @param timeTo End time in seconds since Unix epoch.
+     * @param dashboardData An instance of DashboardFragment.DashboardData.
      * @return A new instance of fragment DashboardStepsWidget.
      */
-    public static DashboardStepsWidget newInstance(int timeFrom, int timeTo) {
+    public static DashboardStepsWidget newInstance(DashboardFragment.DashboardData dashboardData) {
         DashboardStepsWidget fragment = new DashboardStepsWidget();
         Bundle args = new Bundle();
-        args.putInt(ARG_TIME_FROM, timeFrom);
-        args.putInt(ARG_TIME_TO, timeTo);
+        args.putSerializable(ARG_DASHBOARD_DATA, dashboardData);
         fragment.setArguments(args);
         return fragment;
     }
@@ -77,9 +75,9 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
 
     protected void fillData() {
         // Update text representation
-        stepsCount.setText(String.valueOf(HealthUtils.getStepsTotal(timeTo)));
+        stepsCount.setText(String.valueOf(dashboardData.getStepsTotal()));
 
         // Draw gauge
-        stepsGauge.setImageBitmap(drawGauge(200, 15, color_activity, HealthUtils.getStepsGoalFactor(timeTo)));
+        stepsGauge.setImageBitmap(drawGauge(200, 15, color_activity, dashboardData.getStepsGoalFactor()));
     }
 }

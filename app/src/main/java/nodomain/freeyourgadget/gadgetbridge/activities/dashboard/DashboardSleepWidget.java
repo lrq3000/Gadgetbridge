@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
+import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -47,15 +47,13 @@ public class DashboardSleepWidget extends AbstractDashboardWidget {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param timeFrom Start time in seconds since Unix epoch.
-     * @param timeTo End time in seconds since Unix epoch.
+     * @param dashboardData An instance of DashboardFragment.DashboardData.
      * @return A new instance of fragment DashboardSleepWidget.
      */
-    public static DashboardSleepWidget newInstance(int timeFrom, int timeTo) {
+    public static DashboardSleepWidget newInstance(DashboardFragment.DashboardData dashboardData) {
         DashboardSleepWidget fragment = new DashboardSleepWidget();
         Bundle args = new Bundle();
-        args.putInt(ARG_TIME_FROM, timeFrom);
-        args.putInt(ARG_TIME_TO, timeTo);
+        args.putSerializable(ARG_DASHBOARD_DATA, dashboardData);
         fragment.setArguments(args);
         return fragment;
     }
@@ -80,12 +78,12 @@ public class DashboardSleepWidget extends AbstractDashboardWidget {
     @Override
     protected void fillData() {
         // Update text representation
-        long totalSleepMinutes = HealthUtils.getSleepMinutesTotal(timeTo);
+        long totalSleepMinutes = dashboardData.getSleepMinutesTotal();
         String sleepHours = String.format("%d", (int) Math.floor(totalSleepMinutes / 60f));
         String sleepMinutes = String.format("%02d", (int) (totalSleepMinutes % 60f));
         sleepAmount.setText(sleepHours + ":" + sleepMinutes);
 
         // Draw gauge
-        sleepGauge.setImageBitmap(drawGauge(200, 15, color_light_sleep, HealthUtils.getSleepMinutesGoalFactor(timeTo)));
+        sleepGauge.setImageBitmap(drawGauge(200, 15, color_light_sleep, dashboardData.getSleepMinutesGoalFactor()));
     }
 }

@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
+import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -47,15 +47,13 @@ public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param timeFrom Start time in seconds since Unix epoch.
-     * @param timeTo End time in seconds since Unix epoch.
+     * @param dashboardData An instance of DashboardFragment.DashboardData.
      * @return A new instance of fragment DashboardActiveTimeWidget.
      */
-    public static DashboardActiveTimeWidget newInstance(int timeFrom, int timeTo) {
+    public static DashboardActiveTimeWidget newInstance(DashboardFragment.DashboardData dashboardData) {
         DashboardActiveTimeWidget fragment = new DashboardActiveTimeWidget();
         Bundle args = new Bundle();
-        args.putInt(ARG_TIME_FROM, timeFrom);
-        args.putInt(ARG_TIME_TO, timeTo);
+        args.putSerializable(ARG_DASHBOARD_DATA, dashboardData);
         fragment.setArguments(args);
         return fragment;
     }
@@ -80,12 +78,12 @@ public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
     @Override
     protected void fillData() {
         // Update text representation
-        long totalActiveMinutes = HealthUtils.getActiveMinutesTotal(timeFrom, timeTo);
+        long totalActiveMinutes = dashboardData.getActiveMinutesTotal();
         String activeHours = String.format("%d", (int) Math.floor(totalActiveMinutes / 60f));
         String activeMinutes = String.format("%02d", (int) (totalActiveMinutes % 60f));
         activeTime.setText(activeHours + ":" + activeMinutes);
 
         // Draw gauge
-        activeTimeGauge.setImageBitmap(drawGauge(200, 15, color_active_time, HealthUtils.getActiveMinutesGoalFactor(timeFrom, timeTo)));
+        activeTimeGauge.setImageBitmap(drawGauge(200, 15, color_active_time, dashboardData.getActiveMinutesGoalFactor()));
     }
 }

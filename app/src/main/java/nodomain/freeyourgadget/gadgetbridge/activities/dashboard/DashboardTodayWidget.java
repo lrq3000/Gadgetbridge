@@ -43,6 +43,7 @@ import java.util.List;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
 import nodomain.freeyourgadget.gadgetbridge.activities.charts.StepAnalysis;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
@@ -75,15 +76,13 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param timeFrom Start time in seconds since Unix epoch.
-     * @param timeTo End time in seconds since Unix epoch.
+     * @param dashboardData An instance of DashboardFragment.DashboardData.
      * @return A new instance of fragment DashboardTodayWidget.
      */
-    public static DashboardTodayWidget newInstance(int timeFrom, int timeTo) {
+    public static DashboardTodayWidget newInstance(DashboardFragment.DashboardData dashboardData) {
         DashboardTodayWidget fragment = new DashboardTodayWidget();
         Bundle args = new Bundle();
-        args.putInt(ARG_TIME_FROM, timeFrom);
-        args.putInt(ARG_TIME_TO, timeTo);
+        args.putSerializable(ARG_DASHBOARD_DATA, dashboardData);
         fragment.setArguments(args);
         return fragment;
     }
@@ -209,7 +208,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             try (DBHandler dbHandler = GBApplication.acquireDB()) {
                 for (GBDevice dev : devices) {
                     if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                        List<? extends ActivitySample> activitySamples = HealthUtils.getAllSamples(dbHandler, dev, timeFrom, timeTo);
+                        List<? extends ActivitySample> activitySamples = HealthUtils.getAllSamples(dbHandler, dev, dashboardData.timeFrom, dashboardData.timeTo);
                         allActivitySamples.addAll(activitySamples);
                         StepAnalysis stepAnalysis = new StepAnalysis();
                         stepSessions.addAll(stepAnalysis.calculateStepSessions(activitySamples));
@@ -221,7 +220,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
 
             // Integrate and chronologically order various data from multiple devices
             List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
-            long midDaySecond = timeFrom + (12 * 60 * 60);
+            long midDaySecond = dashboardData.timeFrom + (12 * 60 * 60);
             for (ActivitySample sample : allActivitySamples) {
                 // Handle only TYPE_NOT_WORN and TYPE_SLEEP (including variants) here
                 if (sample.getKind() != ActivityKind.TYPE_NOT_WORN && (sample.getKind() == ActivityKind.TYPE_NOT_MEASURED || (sample.getKind() & ActivityKind.TYPE_SLEEP) == 0))
@@ -270,7 +269,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             ArrayList<Integer> colors_0_12 = new ArrayList<>();
             ArrayList<PieEntry> entries_12_24 = new ArrayList<>();
             ArrayList<Integer> colors_12_24 = new ArrayList<>();
-            long secondIndex = timeFrom;
+            long secondIndex = dashboardData.timeFrom;
             for (GeneralizedActivity activity : generalizedActivities) {
                 // FIXME: correctly merge parallel activities from multiple devices
                 // Skip earlier sessions
@@ -308,7 +307,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             }
             // Fill remaining time until midnight
             long currentTime = Calendar.getInstance().getTimeInMillis() / 1000;
-            if (!mode_24h && currentTime > timeFrom && currentTime < midDaySecond) {
+            if (!mode_24h && currentTime > dashboardData.timeFrom && currentTime < midDaySecond) {
                 // Fill with unknown slice up until current time
                 entries_0_12.add(new PieEntry(currentTime - secondIndex, "Unknown"));
                 colors_0_12.add(color_worn);
@@ -316,12 +315,12 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 entries_0_12.add(new PieEntry(midDaySecond - currentTime, "Empty"));
                 colors_0_12.add(Color.TRANSPARENT);
             }
-            if ((mode_24h || currentTime >= midDaySecond) && currentTime < timeTo) {
+            if ((mode_24h || currentTime >= midDaySecond) && currentTime < dashboardData.timeTo) {
                 // Fill with unknown slice up until current time
                 entries_12_24.add(new PieEntry(currentTime - secondIndex, "Unknown"));
                 colors_12_24.add(color_worn);
                 // Draw transparent slice for remaining time until midnight
-                entries_12_24.add(new PieEntry(timeTo - currentTime, "Empty"));
+                entries_12_24.add(new PieEntry(dashboardData.timeTo - currentTime, "Empty"));
                 colors_12_24.add(Color.TRANSPARENT);
             }
 
