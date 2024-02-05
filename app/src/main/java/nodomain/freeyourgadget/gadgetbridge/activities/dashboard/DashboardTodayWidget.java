@@ -28,6 +28,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
@@ -38,8 +40,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
@@ -206,6 +209,66 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     }
 
     private class FillDataAsyncTask extends AsyncTask<Void, Void, Void> {
+        private final TreeMap<Long, Integer> activityTimestamps = new TreeMap<>();
+        private final List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
+
+        private void addActivity(long timeFrom, long timeTo, int activityKind) {
+            LOG.info("Adding activity: timeFrom=" + timeFrom + ", timeTo=" + timeTo + ", activityKind=" + activityKind);
+            for (long i = timeFrom; i<=timeTo; i++) {
+                // If the current timestamp isn't saved yet, do so immediately
+                if (activityTimestamps.get(i) == null) {
+                    activityTimestamps.put(i, activityKind);
+                    continue;
+                }
+                // If the current timestamp is already saved, compare the activity kinds and
+                // keep the most 'important' one
+                switch (activityTimestamps.get(i)) {
+                    case ActivityKind.TYPE_ACTIVITY:
+                        break;
+                    case ActivityKind.TYPE_DEEP_SLEEP:
+                        if (activityKind == ActivityKind.TYPE_ACTIVITY)
+                            activityTimestamps.put(i, activityKind);
+                        break;
+                    case ActivityKind.TYPE_LIGHT_SLEEP:
+                        if (activityKind == ActivityKind.TYPE_ACTIVITY ||
+                                activityKind == ActivityKind.TYPE_DEEP_SLEEP)
+                            activityTimestamps.put(i, activityKind);
+                        break;
+                    case ActivityKind.TYPE_REM_SLEEP:
+                        if (activityKind == ActivityKind.TYPE_ACTIVITY ||
+                                activityKind == ActivityKind.TYPE_DEEP_SLEEP ||
+                                activityKind == ActivityKind.TYPE_LIGHT_SLEEP)
+                            activityTimestamps.put(i, activityKind);
+                        break;
+                    case ActivityKind.TYPE_SLEEP:
+                        if (activityKind == ActivityKind.TYPE_ACTIVITY ||
+                                activityKind == ActivityKind.TYPE_DEEP_SLEEP ||
+                                activityKind == ActivityKind.TYPE_LIGHT_SLEEP ||
+                                activityKind == ActivityKind.TYPE_REM_SLEEP)
+                            activityTimestamps.put(i, activityKind);
+                        break;
+                    default:
+                        activityTimestamps.put(i, activityKind);
+                        break;
+                }
+            }
+        }
+
+        private void createGeneralizedActivities() {
+            GeneralizedActivity previous = null;
+            long midDaySecond = dashboardData.timeFrom + (12 * 60 * 60);
+            for (Map.Entry<Long, Integer> activity : activityTimestamps.entrySet()) {
+                long timestamp = activity.getKey();
+                int activityKind = activity.getValue();
+                if (previous == null || previous.activityKind != activityKind || (!mode_24h && timestamp == midDaySecond) || previous.timeTo < timestamp - 60) {
+                    previous = new GeneralizedActivity(activityKind, timestamp, timestamp);
+                    generalizedActivities.add(previous);
+                } else {
+                    previous.timeTo = timestamp;
+                }
+            }
+        }
+
         @Override
         protected Void doInBackground(Void... params) {
             // Retrieve activity data
@@ -226,50 +289,18 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             }
 
             // Integrate and chronologically order various data from multiple devices
-            List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
             long midDaySecond = dashboardData.timeFrom + (12 * 60 * 60);
             for (ActivitySample sample : allActivitySamples) {
                 // Handle only TYPE_NOT_WORN and TYPE_SLEEP (including variants) here
                 if (sample.getKind() != ActivityKind.TYPE_NOT_WORN && (sample.getKind() == ActivityKind.TYPE_NOT_MEASURED || (sample.getKind() & ActivityKind.TYPE_SLEEP) == 0))
                     continue;
-                if (generalizedActivities.size() > 0) {
-                    GeneralizedActivity previous = generalizedActivities.get(generalizedActivities.size() - 1);
-                    // Merge samples if the type is the same, and they are within a minute of each other
-                    if (previous.activityKind == sample.getKind() && previous.timeTo > sample.getTimestamp() - 60) {
-                        // But only if the resulting activity doesn't cross the midday boundary in 12h mode
-                        if (mode_24h || sample.getTimestamp() + 60 < midDaySecond || previous.timeFrom > midDaySecond) {
-                            generalizedActivities.get(generalizedActivities.size() - 1).timeTo = sample.getTimestamp() + 60;
-                            continue;
-                        }
-                    }
-                }
-                generalizedActivities.add(new GeneralizedActivity(
-                        sample.getKind(),
-                        sample.getTimestamp(),
-                        sample.getTimestamp() + 60
-                ));
+                // Add to day results
+                addActivity(sample.getTimestamp(), sample.getTimestamp() + 60, sample.getKind());
             }
             for (ActivitySession session : stepSessions) {
-                if (!mode_24h && session.getStartTime().getTime() / 1000 < midDaySecond && session.getEndTime().getTime() / 1000 > midDaySecond) {
-                    generalizedActivities.add(new GeneralizedActivity(
-                            session.getActivityKind(),
-                            session.getStartTime().getTime() / 1000,
-                            midDaySecond
-                    ));
-                    generalizedActivities.add(new GeneralizedActivity(
-                            session.getActivityKind(),
-                            midDaySecond,
-                            session.getEndTime().getTime() / 1000
-                    ));
-                } else {
-                    generalizedActivities.add(new GeneralizedActivity(
-                            session.getActivityKind(),
-                            session.getStartTime().getTime() / 1000,
-                            session.getEndTime().getTime() / 1000
-                    ));
-                }
+                addActivity(session.getStartTime().getTime() / 1000, session.getEndTime().getTime() / 1000, ActivityKind.TYPE_ACTIVITY);
             }
-            Collections.sort(generalizedActivities, (o1, o2) -> (int) (o1.timeFrom - o2.timeFrom));
+            createGeneralizedActivities();
 
             // Add pie slice entries
             ArrayList<PieEntry> entries_0_12 = new ArrayList<>();
@@ -278,9 +309,6 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             ArrayList<Integer> colors_12_24 = new ArrayList<>();
             long secondIndex = dashboardData.timeFrom;
             for (GeneralizedActivity activity : generalizedActivities) {
-                // FIXME: correctly merge parallel activities from multiple devices
-                // Skip earlier sessions
-                if (activity.timeFrom < secondIndex) continue;
                 // Use correct entries list for this part of the day
                 ArrayList<PieEntry> entries = entries_0_12;
                 ArrayList<Integer> colors = colors_0_12;
@@ -298,7 +326,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                     entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Not worn"));
                     colors.add(color_not_worn);
                     secondIndex = activity.timeTo;
-                } else if (activity.activityKind == ActivityKind.TYPE_LIGHT_SLEEP || activity.activityKind == ActivityKind.TYPE_SLEEP) {
+                } else if (activity.activityKind == ActivityKind.TYPE_REM_SLEEP || activity.activityKind == ActivityKind.TYPE_LIGHT_SLEEP || activity.activityKind == ActivityKind.TYPE_SLEEP) {
                     entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Light sleep"));
                     colors.add(color_light_sleep);
                     secondIndex = activity.timeTo;
@@ -359,6 +387,12 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             this.activityKind = activityKind;
             this.timeFrom = timeFrom;
             this.timeTo = timeTo;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "Generalized activity: timeFrom=" + timeFrom + ", timeTo=" + timeTo + ", activityKind=" + activityKind + ", calculated duration: " + (timeTo - timeFrom) + " seconds";
         }
     }
 }
