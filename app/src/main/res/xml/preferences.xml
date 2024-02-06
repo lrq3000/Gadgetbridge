@@ -145,7 +145,15 @@
                     android:key="dashboard_devices_all"
                     android:layout="@layout/preference_checkbox"
                     android:title="All devices"
-                    android:enabled="false"
+                    android:disableDependentsState="true"
+                    app:iconSpaceReserved="false" />
+                <MultiSelectListPreference
+                    android:dependency="dashboard_devices_all"
+                    android:dialogTitle="Select devices"
+                    android:entries="@array/empty_array"
+                    android:entryValues="@array/empty_array"
+                    android:key="dashboard_devices_multiselect"
+                    android:title="Select devices..."
                     app:iconSpaceReserved="false" />
             </PreferenceCategory>
         </PreferenceScreen>

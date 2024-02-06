@@ -34,20 +34,28 @@ import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.AbstractGBActivity;
+import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
+import nodomain.freeyourgadget.gadgetbridge.util.DashboardUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
-import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
+import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 public class DashboardCalendarActivity extends AbstractGBActivity {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardCalendarActivity.class);
     public static String EXTRA_TIMESTAMP = "dashboard_calendar_chosen_day";
     private final ConcurrentHashMap<Calendar, TextView> dayCells = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Integer, Integer> dayColors = new ConcurrentHashMap<>();
+
+    private boolean showAllDevices;
+    private Set<String> showDeviceList;
 
     TextView monthTextView;
     TextView arrowLeft;
@@ -64,6 +72,10 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
         cal = Calendar.getInstance();
         long receivedTimestamp = getIntent().getLongExtra(EXTRA_TIMESTAMP, 0);
         if (receivedTimestamp != 0) cal.setTimeInMillis(receivedTimestamp);
+
+        Prefs prefs = GBApplication.getPrefs();
+        showAllDevices = prefs.getBoolean("dashboard_devices_all", true);
+        showDeviceList = prefs.getStringSet("dashboard_devices_multiselect", new HashSet<>());
 
         arrowLeft = findViewById(R.id.arrow_left);
         arrowLeft.setOnClickListener(v -> {
@@ -179,9 +191,12 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
         protected Void doInBackground(Void... params) {
             for (Calendar day : dayCells.keySet()) {
                 // Determine day color by the amount of the steps goal reached
-                int timeTo = (int) (day.getTimeInMillis() / 1000);
-                int timeFrom = DateTimeUtils.shiftDays(timeTo, -1);
-                float goalFactor = HealthUtils.getStepsGoalFactor(timeTo);
+                DashboardFragment.DashboardData dashboardData = new DashboardFragment.DashboardData();
+                dashboardData.showAllDevices = showAllDevices;
+                dashboardData.showDeviceList = showDeviceList;
+                dashboardData.timeTo = (int) (day.getTimeInMillis() / 1000);
+                dashboardData.timeFrom = DateTimeUtils.shiftDays(dashboardData.timeTo, -1);
+                float goalFactor = DashboardUtils.getStepsGoalFactor(dashboardData);
                 @ColorInt int dayColor;
                 if (goalFactor >= 1) {
                     dayColor = Color.argb(128, 0, 255, 0); // Green

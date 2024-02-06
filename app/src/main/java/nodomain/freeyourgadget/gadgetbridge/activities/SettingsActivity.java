@@ -45,6 +45,7 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.preference.ListPreference;
+import androidx.preference.MultiSelectListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
@@ -55,6 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -72,6 +74,7 @@ import nodomain.freeyourgadget.gadgetbridge.devices.pebble.PebbleSettingsActivit
 import nodomain.freeyourgadget.gadgetbridge.devices.qhybrid.ConfigActivity;
 import nodomain.freeyourgadget.gadgetbridge.devices.zetime.ZeTimePreferenceActivity;
 import nodomain.freeyourgadget.gadgetbridge.externalevents.TimeChangeReceiver;
+import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.Weather;
 import nodomain.freeyourgadget.gadgetbridge.util.AndroidUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.FileUtils;
@@ -395,6 +398,19 @@ public class SettingsActivity extends AbstractSettingsActivityV2 {
                 audioPlayer.setEntries(newEntries);
                 audioPlayer.setEntryValues(newValues);
                 audioPlayer.setDefaultValue(newValues[0]);
+            }
+
+            final MultiSelectListPreference dashboardDevices = findPreference("dashboard_devices_multiselect");
+            if (dashboardDevices != null) {
+                List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+                List<String> deviceMACs = new ArrayList<>();
+                List<String> deviceNames = new ArrayList<>();
+                for (GBDevice dev : devices) {
+                    deviceMACs.add(dev.getAddress());
+                    deviceNames.add(dev.getAliasOrName());
+                }
+                dashboardDevices.setEntryValues(deviceMACs.toArray(new String[0]));
+                dashboardDevices.setEntries(deviceNames.toArray(new String[0]));
             }
 
             final Preference theme = findPreference("pref_key_theme");

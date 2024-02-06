@@ -38,6 +38,8 @@ import com.google.android.material.card.MaterialCardView;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.Set;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
@@ -50,7 +52,7 @@ import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardSleepW
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardStepsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardTodayWidget;
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
-import nodomain.freeyourgadget.gadgetbridge.util.HealthUtils;
+import nodomain.freeyourgadget.gadgetbridge.util.DashboardUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 public class DashboardFragment extends Fragment {
@@ -148,6 +150,9 @@ public class DashboardFragment extends Fragment {
         day.set(Calendar.MINUTE, 59);
         day.set(Calendar.SECOND, 59);
         dashboardData.clear();
+        Prefs prefs = GBApplication.getPrefs();
+        dashboardData.showAllDevices = prefs.getBoolean("dashboard_devices_all", true);
+        dashboardData.showDeviceList = prefs.getStringSet("dashboard_devices_multiselect", new HashSet<>());
         dashboardData.timeTo = (int) (day.getTimeInMillis() / 1000);
         dashboardData.timeFrom = DateTimeUtils.shiftDays(dashboardData.timeTo, -1);
 
@@ -160,7 +165,6 @@ public class DashboardFragment extends Fragment {
             arrowRight.setAlpha(1);
         }
 
-        Prefs prefs = GBApplication.getPrefs();
         boolean cardsEnabled = prefs.getBoolean("dashboard_cards_enabled", true);
 
         if (prefs.getBoolean("dashboard_widget_today_enabled", true)) {
@@ -253,6 +257,8 @@ public class DashboardFragment extends Fragment {
      * data available.
      */
     public static class DashboardData implements Serializable {
+        public boolean showAllDevices;
+        public Set<String> showDeviceList;
         public int timeFrom;
         public int timeTo;
         private int stepsTotal;
@@ -277,49 +283,49 @@ public class DashboardFragment extends Fragment {
 
         public synchronized int getStepsTotal() {
             if (stepsTotal == 0)
-                stepsTotal = HealthUtils.getStepsTotal(timeTo);
+                stepsTotal = DashboardUtils.getStepsTotal(this);
             return stepsTotal;
         }
 
         public synchronized float getStepsGoalFactor() {
             if (stepsGoalFactor == 0)
-                stepsGoalFactor = HealthUtils.getStepsGoalFactor(timeTo);
+                stepsGoalFactor = DashboardUtils.getStepsGoalFactor(this);
             return stepsGoalFactor;
         }
 
         public synchronized float getDistanceTotal() {
             if (distanceTotalMeters == 0)
-                distanceTotalMeters = HealthUtils.getDistanceTotal(timeTo);
+                distanceTotalMeters = DashboardUtils.getDistanceTotal(this);
             return distanceTotalMeters;
         }
 
         public synchronized float getDistanceGoalFactor() {
             if (distanceGoalFactor == 0)
-                distanceGoalFactor = HealthUtils.getDistanceGoalFactor(timeTo);
+                distanceGoalFactor = DashboardUtils.getDistanceGoalFactor(this);
             return distanceGoalFactor;
         }
 
         public synchronized long getActiveMinutesTotal() {
             if (activeMinutesTotal == 0)
-                activeMinutesTotal = HealthUtils.getActiveMinutesTotal(timeFrom, timeTo);
+                activeMinutesTotal = DashboardUtils.getActiveMinutesTotal(this);
             return activeMinutesTotal;
         }
 
         public synchronized float getActiveMinutesGoalFactor() {
             if (activeMinutesGoalFactor == 0)
-                activeMinutesGoalFactor = HealthUtils.getActiveMinutesGoalFactor(timeFrom, timeTo);
+                activeMinutesGoalFactor = DashboardUtils.getActiveMinutesGoalFactor(this);
             return activeMinutesGoalFactor;
         }
 
         public synchronized long getSleepMinutesTotal() {
             if (sleepTotalMinutes == 0)
-                sleepTotalMinutes = HealthUtils.getSleepMinutesTotal(timeTo);
+                sleepTotalMinutes = DashboardUtils.getSleepMinutesTotal(this);
             return sleepTotalMinutes;
         }
 
         public synchronized float getSleepMinutesGoalFactor() {
             if (sleepGoalFactor == 0)
-                sleepGoalFactor = HealthUtils.getSleepMinutesGoalFactor(timeTo);
+                sleepGoalFactor = DashboardUtils.getSleepMinutesGoalFactor(this);
             return sleepGoalFactor;
         }
     }

@@ -24,6 +24,7 @@ import java.util.GregorianCalendar;
 import java.util.List;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
+import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
 import nodomain.freeyourgadget.gadgetbridge.activities.charts.StepAnalysis;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.devices.DeviceCoordinator;
@@ -35,8 +36,8 @@ import nodomain.freeyourgadget.gadgetbridge.model.ActivitySession;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
 import nodomain.freeyourgadget.gadgetbridge.model.DailyTotals;
 
-public class HealthUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(HealthUtils.class);
+public class DashboardUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(DashboardUtils.class);
 
     public static long getSteps(GBDevice device, DBHandler db, int timeTo) {
         Calendar day = GregorianCalendar.getInstance();
@@ -45,13 +46,13 @@ public class HealthUtils {
         return ds.getDailyTotalsForDevice(device, day, db)[0];
     }
 
-    public static int getStepsTotal(int timeTo) {
+    public static int getStepsTotal(DashboardFragment.DashboardData dashboardData) {
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         int totalSteps = 0;
         try (DBHandler dbHandler = GBApplication.acquireDB()) {
             for (GBDevice dev : devices) {
-                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                    totalSteps += getSteps(dev, dbHandler, timeTo);
+                if ((dashboardData.showAllDevices || dashboardData.showDeviceList.contains(dev.getAddress())) && dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalSteps += getSteps(dev, dbHandler, dashboardData.timeTo);
                 }
             }
         } catch (Exception e) {
@@ -60,10 +61,10 @@ public class HealthUtils {
         return totalSteps;
     }
 
-    public static float getStepsGoalFactor(int timeTo) {
+    public static float getStepsGoalFactor(DashboardFragment.DashboardData dashboardData) {
         ActivityUser activityUser = new ActivityUser();
         float stepsGoal = activityUser.getStepsGoal();
-        float goalFactor = getStepsTotal(timeTo) / stepsGoal;
+        float goalFactor = getStepsTotal(dashboardData) / stepsGoal;
         if (goalFactor > 1) goalFactor = 1;
 
         return goalFactor;
@@ -76,13 +77,13 @@ public class HealthUtils {
         return ds.getDailyTotalsForDevice(device, day, db)[1];
     }
 
-    public static long getSleepMinutesTotal(int timeTo) {
+    public static long getSleepMinutesTotal(DashboardFragment.DashboardData dashboardData) {
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         long totalSleepMinutes = 0;
         try (DBHandler dbHandler = GBApplication.acquireDB()) {
             for (GBDevice dev : devices) {
-                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                    totalSleepMinutes += getSleep(dev, dbHandler, timeTo);
+                if ((dashboardData.showAllDevices || dashboardData.showDeviceList.contains(dev.getAddress())) && dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalSleepMinutes += getSleep(dev, dbHandler, dashboardData.timeTo);
                 }
             }
         } catch (Exception e) {
@@ -91,22 +92,22 @@ public class HealthUtils {
         return totalSleepMinutes;
     }
 
-    public static float getSleepMinutesGoalFactor(int timeTo) {
+    public static float getSleepMinutesGoalFactor(DashboardFragment.DashboardData dashboardData) {
         ActivityUser activityUser = new ActivityUser();
         int sleepMinutesGoal = activityUser.getSleepDurationGoal() * 60;
-        float goalFactor = (float) getSleepMinutesTotal(timeTo) / sleepMinutesGoal;
+        float goalFactor = (float) getSleepMinutesTotal(dashboardData) / sleepMinutesGoal;
         if (goalFactor > 1) goalFactor = 1;
 
         return goalFactor;
     }
 
-    public static float getDistanceTotal(int timeTo) {
+    public static float getDistanceTotal(DashboardFragment.DashboardData dashboardData) {
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         long totalSteps = 0;
         try (DBHandler dbHandler = GBApplication.acquireDB()) {
             for (GBDevice dev : devices) {
-                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                    totalSteps += getSteps(dev, dbHandler, timeTo);
+                if ((dashboardData.showAllDevices || dashboardData.showDeviceList.contains(dev.getAddress())) && dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalSteps += getSteps(dev, dbHandler, dashboardData.timeTo);
                 }
             }
         } catch (Exception e) {
@@ -117,22 +118,22 @@ public class HealthUtils {
         return totalSteps * stepLength * 0.01f;
     }
 
-    public static float getDistanceGoalFactor(int timeTo) {
+    public static float getDistanceGoalFactor(DashboardFragment.DashboardData dashboardData) {
         ActivityUser activityUser = new ActivityUser();
         int distanceGoal = activityUser.getDistanceGoalMeters();
-        float goalFactor = getDistanceTotal(timeTo) / distanceGoal;
+        float goalFactor = getDistanceTotal(dashboardData) / distanceGoal;
         if (goalFactor > 1) goalFactor = 1;
 
         return goalFactor;
     }
 
-    public static long getActiveMinutesTotal(int timeFrom, int timeTo) {
+    public static long getActiveMinutesTotal(DashboardFragment.DashboardData dashboardData) {
         List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
         long totalActiveMinutes = 0;
         try (DBHandler dbHandler = GBApplication.acquireDB()) {
             for (GBDevice dev : devices) {
-                if (dev.getDeviceCoordinator().supportsActivityTracking()) {
-                    totalActiveMinutes += getActiveMinutes(dev, dbHandler, timeFrom, timeTo);
+                if ((dashboardData.showAllDevices || dashboardData.showDeviceList.contains(dev.getAddress())) && dev.getDeviceCoordinator().supportsActivityTracking()) {
+                    totalActiveMinutes += getActiveMinutes(dev, dbHandler, dashboardData);
                 }
             }
         } catch (Exception e) {
@@ -141,19 +142,19 @@ public class HealthUtils {
         return totalActiveMinutes;
     }
 
-    public static float getActiveMinutesGoalFactor(int timeFrom, int timeTo) {
+    public static float getActiveMinutesGoalFactor(DashboardFragment.DashboardData dashboardData) {
         ActivityUser activityUser = new ActivityUser();
         int activeTimeGoal = activityUser.getActiveTimeGoalMinutes();
-        float goalFactor = (float) getActiveMinutesTotal(timeFrom, timeTo) / activeTimeGoal;
+        float goalFactor = (float) getActiveMinutesTotal(dashboardData) / activeTimeGoal;
         if (goalFactor > 1) goalFactor = 1;
 
         return goalFactor;
     }
 
-    public static long getActiveMinutes(GBDevice gbDevice, DBHandler db, int timeFrom, int timeTo) {
+    public static long getActiveMinutes(GBDevice gbDevice, DBHandler db, DashboardFragment.DashboardData dashboardData) {
         ActivitySession stepSessionsSummary = new ActivitySession();
         List<ActivitySession> stepSessions;
-        List<? extends ActivitySample> activitySamples = getAllSamples(db, gbDevice, timeFrom, timeTo);
+        List<? extends ActivitySample> activitySamples = getAllSamples(db, gbDevice, dashboardData);
         StepAnalysis stepAnalysis = new StepAnalysis();
 
         boolean isEmptySummary = false;
@@ -168,9 +169,9 @@ public class HealthUtils {
         return duration / 1000 / 60;
     }
 
-    public static List<? extends ActivitySample> getAllSamples(DBHandler db, GBDevice device, int tsFrom, int tsTo) {
+    public static List<? extends ActivitySample> getAllSamples(DBHandler db, GBDevice device, DashboardFragment.DashboardData dashboardData) {
         SampleProvider<? extends ActivitySample> provider = getProvider(db, device);
-        return provider.getAllActivitySamples(tsFrom, tsTo);
+        return provider.getAllActivitySamples(dashboardData.timeFrom, dashboardData.timeTo);
     }
 
     protected static SampleProvider<? extends AbstractActivitySample> getProvider(DBHandler db, GBDevice device) {
