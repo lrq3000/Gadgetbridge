@@ -18,7 +18,9 @@ package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -61,6 +63,7 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
     TextView arrowLeft;
     TextView arrowRight;
     GridLayout calendarGrid;
+    Calendar currentDay;
     Calendar cal;
 
     @Override
@@ -69,9 +72,13 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
         setContentView(R.layout.activity_dashboard_calendar);
         monthTextView = findViewById(R.id.calendar_month);
         calendarGrid = findViewById(R.id.dashboard_calendar_grid);
+        currentDay = Calendar.getInstance();
         cal = Calendar.getInstance();
         long receivedTimestamp = getIntent().getLongExtra(EXTRA_TIMESTAMP, 0);
-        if (receivedTimestamp != 0) cal.setTimeInMillis(receivedTimestamp);
+        if (receivedTimestamp != 0) {
+            currentDay.setTimeInMillis(receivedTimestamp);
+            cal.setTimeInMillis(receivedTimestamp);
+        }
 
         Prefs prefs = GBApplication.getPrefs();
         showAllDevices = prefs.getBoolean("dashboard_devices_all", true);
@@ -233,7 +240,16 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
                 GradientDrawable backgroundDrawable = new GradientDrawable();
                 backgroundDrawable.setShape(GradientDrawable.OVAL);
                 backgroundDrawable.setColor(dayColor);
-                text.setBackground(backgroundDrawable);
+                if (DateTimeUtils.isSameDay(day, currentDay)) {
+                    GradientDrawable borderDrawable = new GradientDrawable();
+                    borderDrawable.setShape(GradientDrawable.RECTANGLE);
+                    borderDrawable.setColor(Color.TRANSPARENT);
+                    borderDrawable.setStroke(2, GBApplication.getTextColor(getApplicationContext()));
+                    LayerDrawable layerDrawable = new LayerDrawable(new Drawable[]{backgroundDrawable, borderDrawable});
+                    text.setBackground(layerDrawable);
+                } else {
+                    text.setBackground(backgroundDrawable);
+                }
                 text.setOnClickListener(v -> {
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra(EXTRA_TIMESTAMP, timestamp);
