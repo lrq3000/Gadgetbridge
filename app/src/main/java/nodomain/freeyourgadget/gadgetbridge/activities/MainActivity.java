@@ -17,6 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities;
 
+import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.ACTION_CONNECT;
+
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Dialog;
@@ -33,12 +35,10 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
-import android.view.MenuItem;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
@@ -46,6 +46,10 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.navigation.NavController;
+import androidx.navigation.NavGraph;
+import androidx.navigation.fragment.NavHostFragment;
+import androidx.navigation.ui.NavigationUI;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -64,15 +68,16 @@ import java.util.Set;
 import nodomain.freeyourgadget.gadgetbridge.BuildConfig;
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.devices.DeviceManager;
+import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.DeviceService;
 import nodomain.freeyourgadget.gadgetbridge.util.AndroidUtils;
+import nodomain.freeyourgadget.gadgetbridge.util.DeviceHelper;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
 import nodomain.freeyourgadget.gadgetbridge.util.GBChangeLog;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
-public class MainActivity extends AbstractGBActivity implements BottomNavigationView.OnNavigationItemSelectedListener, GBActivity {
+public class MainActivity extends AbstractGBActivity implements GBActivity {
     private static final Logger LOG = LoggerFactory.getLogger(MainActivity.class);
     public static final String ACTION_REQUEST_PERMISSIONS
             = "nodomain.freeyourgadget.gadgetbridge.activities.controlcenter.requestpermissions";
@@ -81,12 +86,6 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
     private boolean isLanguageInvalid = false;
     private boolean isThemeInvalid = false;
     private static PhoneStateListener fakeStateListener;
-
-    private BottomNavigationView bottomNavigationView;
-    private int activeFragment;
-    private DashboardFragment dashboardFragment = new DashboardFragment();
-    private ControlCenterv2 devicesFragment = new ControlCenterv2();
-    private MainMenuFragment mainMenuFragment = new MainMenuFragment();
 
     //needed for KK compatibility
     static {
@@ -107,25 +106,20 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
                 case GBApplication.ACTION_QUIT:
                     finish();
                     break;
-                case DeviceManager.ACTION_DEVICES_CHANGED:
-                case GBApplication.ACTION_NEW_DATA:
-                    devicesFragment.createRefreshTask("get activity data", getApplication()).execute();
-//                    mGBDeviceAdapter.rebuildFolders();
-                    devicesFragment.refreshPairedDevices();
-                    break;
-                case DeviceService.ACTION_REALTIME_SAMPLES:
-                    handleRealtimeSample(intent.getSerializableExtra(DeviceService.EXTRA_REALTIME_SAMPLE));
-                    break;
                 case ACTION_REQUEST_PERMISSIONS:
                     checkAndRequestPermissions();
                     break;
                 case ACTION_REQUEST_LOCATION_PERMISSIONS:
                     checkAndRequestLocationPermissions();
                     break;
+                case DeviceService.ACTION_REALTIME_SAMPLES:
+                    handleRealtimeSample(intent.getSerializableExtra(DeviceService.EXTRA_REALTIME_SAMPLE));
+                    break;
             }
         }
     };
     private boolean pesterWithPermissions = true;
+
     private ActivitySample currentHRSample;
 
     public ActivitySample getCurrentHRSample() {
@@ -135,9 +129,6 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
     private void setCurrentHRSample(ActivitySample sample) {
         if (HeartRateUtils.getInstance().isValidHeartRateValue(sample.getHeartRate())) {
             currentHRSample = sample;
-            if (devicesFragment.isResumed()) {
-                devicesFragment.refreshPairedDevices();
-            }
         }
     }
 
@@ -156,25 +147,24 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
 
         Prefs prefs = GBApplication.getPrefs();
 
-        bottomNavigationView = findViewById(R.id.bottom_nav_bar);
-        bottomNavigationView.setOnNavigationItemSelectedListener(this);
-        if (prefs.getBoolean("dashboard_as_default_view", true)) {
-            bottomNavigationView.setSelectedItemId(R.id.bottom_nav_dashboard);
-            activeFragment = R.id.bottom_nav_dashboard;
-        } else {
-            bottomNavigationView.setSelectedItemId(R.id.bottom_nav_devices);
-            activeFragment = R.id.bottom_nav_devices;
+        NavHostFragment navHostFragment = (NavHostFragment)
+                getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        NavController navController = navHostFragment.getNavController();
+        if (!prefs.getBoolean("dashboard_as_default_view", true)) {
+            NavGraph navGraph = navController.getNavInflater().inflate(R.navigation.main);
+            navGraph.setStartDestination(R.id.bottom_nav_devices);
+            navController.setGraph(navGraph);
         }
+        BottomNavigationView navigationView = findViewById(R.id.bottom_nav_bar);
+        NavigationUI.setupWithNavController(navigationView, navController);
 
         IntentFilter filterLocal = new IntentFilter();
         filterLocal.addAction(GBApplication.ACTION_LANGUAGE_CHANGE);
         filterLocal.addAction(GBApplication.ACTION_THEME_CHANGE);
         filterLocal.addAction(GBApplication.ACTION_QUIT);
-        filterLocal.addAction(GBApplication.ACTION_NEW_DATA);
-        filterLocal.addAction(DeviceManager.ACTION_DEVICES_CHANGED);
-        filterLocal.addAction(DeviceService.ACTION_REALTIME_SAMPLES);
         filterLocal.addAction(ACTION_REQUEST_PERMISSIONS);
         filterLocal.addAction(ACTION_REQUEST_LOCATION_PERMISSIONS);
+        filterLocal.addAction(DeviceService.ACTION_REALTIME_SAMPLES);
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, filterLocal);
 
         /*
@@ -257,26 +247,14 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putInt("activeFragment", activeFragment); // Save variables into the Bundle
-        super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        activeFragment = savedInstanceState.getInt("activeFragment"); // Retrieve variables from the Bundle
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
+        handleShortcut(getIntent());
         if (isLanguageInvalid || isThemeInvalid) {
             isLanguageInvalid = false;
             isThemeInvalid = false;
             recreate();
         }
-        updateFragment();
     }
 
     @Override
@@ -285,34 +263,15 @@ public class MainActivity extends AbstractGBActivity implements BottomNavigation
         super.onDestroy();
     }
 
-    @Override
-    public boolean
-    onNavigationItemSelected(@NonNull MenuItem item) {
-        activeFragment = item.getItemId();
-        updateFragment();
-        return true;
-    }
-
-    private void updateFragment() {
-        switch (activeFragment) {
-            case R.id.bottom_nav_dashboard:
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, dashboardFragment)
-                        .commit();
-                break;
-            case R.id.bottom_nav_devices:
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, devicesFragment)
-                        .commit();
-                break;
-            case R.id.bottom_nav_menu:
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, mainMenuFragment)
-                        .commit();
-                break;
+    private void handleShortcut(Intent intent) {
+        if(ACTION_CONNECT.equals(intent.getAction())) {
+            String btDeviceAddress = intent.getStringExtra("device");
+            if(btDeviceAddress!=null){
+                GBDevice candidate = DeviceHelper.getInstance().findAvailableDevice(btDeviceAddress, this);
+                if (candidate != null && !candidate.isConnected()) {
+                    GBApplication.deviceService(candidate).connect();
+                }
+            }
         }
     }
 

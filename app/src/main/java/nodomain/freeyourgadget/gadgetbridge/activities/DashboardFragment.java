@@ -51,8 +51,8 @@ import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardGoalsW
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardSleepWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardStepsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardTodayWidget;
-import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.DashboardUtils;
+import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 public class DashboardFragment extends Fragment {
@@ -103,9 +103,19 @@ public class DashboardFragment extends Fragment {
         distanceWidget = null;
         activeTimeWidget = null;
         sleepWidget = null;
-        refresh();
+
+        // Only load widgets here if the Dashboard is the initial view.
+        // This prevents a hard crash when replacing the fragment in createWidget() via a FragmentManager.
+        Prefs prefs = GBApplication.getPrefs();
+        if (prefs.getBoolean("dashboard_as_default_view", true)) refresh();
 
         return dashboardView;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        refresh();
     }
 
     @Override
@@ -222,7 +232,7 @@ public class DashboardFragment extends Fragment {
         FragmentContainerView fragment = new FragmentContainerView(requireActivity());
         int fragmentId = View.generateViewId();
         fragment.setId(fragmentId);
-        getChildFragmentManager()
+        getParentFragmentManager()
                 .beginTransaction()
                 .replace(fragmentId, widgetObj)
                 .commit();

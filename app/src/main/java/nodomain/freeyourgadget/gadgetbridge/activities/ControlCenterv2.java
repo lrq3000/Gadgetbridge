@@ -19,10 +19,10 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities;
 
-import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.ACTION_CONNECT;
-
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -31,15 +31,18 @@ import android.view.ViewGroup;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
@@ -50,8 +53,9 @@ import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.devices.DeviceCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.DeviceManager;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
+import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.DailyTotals;
-import nodomain.freeyourgadget.gadgetbridge.util.DeviceHelper;
+import nodomain.freeyourgadget.gadgetbridge.model.DeviceService;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
 
 public class ControlCenterv2 extends Fragment {
@@ -62,6 +66,33 @@ public class ControlCenterv2 extends Fragment {
     private FloatingActionButton fab;
     List<GBDevice> deviceList;
     private  HashMap<String,long[]> deviceActivityHashMap = new HashMap();
+
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            switch (Objects.requireNonNull(action)) {
+                case DeviceManager.ACTION_DEVICES_CHANGED:
+                case GBApplication.ACTION_NEW_DATA:
+                    createRefreshTask("get activity data", requireContext()).execute();
+                    mGBDeviceAdapter.rebuildFolders();
+                    refreshPairedDevices();
+                    break;
+                case DeviceService.ACTION_REALTIME_SAMPLES:
+                    handleRealtimeSample(intent.getSerializableExtra(DeviceService.EXTRA_REALTIME_SAMPLE));
+                    break;
+            }
+        }
+    };
+
+    private void handleRealtimeSample(Serializable extra) {
+        if (extra instanceof ActivitySample) {
+            ActivitySample sample = (ActivitySample) extra;
+            if (HeartRateUtils.getInstance().isValidHeartRateValue(sample.getHeartRate())) {
+                refreshPairedDevices();
+            }
+        }
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
@@ -130,6 +161,12 @@ public class ControlCenterv2 extends Fragment {
 
         registerForContextMenu(deviceListView);
 
+        IntentFilter filterLocal = new IntentFilter();
+        filterLocal.addAction(GBApplication.ACTION_NEW_DATA);
+        filterLocal.addAction(DeviceManager.ACTION_DEVICES_CHANGED);
+        filterLocal.addAction(DeviceService.ACTION_REALTIME_SAMPLES);
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(mReceiver, filterLocal);
+
         refreshPairedDevices();
 
         if (GB.isBluetoothEnabled() && deviceList.isEmpty() && Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
@@ -160,6 +197,7 @@ public class ControlCenterv2 extends Fragment {
     @Override
     public void onDestroy() {
         unregisterForContextMenu(deviceListView);
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(mReceiver);
         super.onDestroy();
     }
 
@@ -181,17 +219,6 @@ public class ControlCenterv2 extends Fragment {
         return new RefreshTask(task, context);
     }
 
-    private void handleShortcut(Intent intent) {
-        if(ACTION_CONNECT.equals(intent.getAction())) {
-            String btDeviceAddress = intent.getStringExtra("device");
-            if(btDeviceAddress!=null){
-                GBDevice candidate = DeviceHelper.getInstance().findAvailableDevice(btDeviceAddress, getActivity());
-                if (candidate != null && !candidate.isConnected()) {
-                    GBApplication.deviceService(candidate).connect();
-                }
-            }
-        }
-    }
     public class RefreshTask extends DBAccess {
         public RefreshTask(String task, Context context) {
             super(task, context);

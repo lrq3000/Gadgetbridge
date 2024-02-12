@@ -213,7 +213,6 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         private final List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
 
         private void addActivity(long timeFrom, long timeTo, int activityKind) {
-            LOG.info("Adding activity: timeFrom=" + timeFrom + ", timeTo=" + timeTo + ", activityKind=" + activityKind);
             for (long i = timeFrom; i<=timeTo; i++) {
                 // If the current timestamp isn't saved yet, do so immediately
                 if (activityTimestamps.get(i) == null) {
