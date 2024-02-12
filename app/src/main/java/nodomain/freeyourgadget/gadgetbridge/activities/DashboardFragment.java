@@ -180,7 +180,7 @@ public class DashboardFragment extends Fragment {
         if (prefs.getBoolean("dashboard_widget_today_enabled", true)) {
             if (todayWidget == null) {
                 todayWidget = DashboardTodayWidget.newInstance(dashboardData);
-                createWidget(todayWidget, cardsEnabled, 2);
+                createWidget(todayWidget, cardsEnabled, prefs.getBoolean("dashboard_widget_today_2columns", true) ? 2 : 1);
             } else {
                 todayWidget.update();
             }
@@ -188,7 +188,7 @@ public class DashboardFragment extends Fragment {
         if (prefs.getBoolean("dashboard_widget_goals_enabled", true)) {
             if (goalsWidget == null) {
                 goalsWidget = DashboardGoalsWidget.newInstance(dashboardData);
-                createWidget(goalsWidget, cardsEnabled, 2);
+                createWidget(goalsWidget, cardsEnabled, prefs.getBoolean("dashboard_widget_goals_2columns", true) ? 2 : 1);
             } else {
                 goalsWidget.update();
             }

@@ -103,13 +103,30 @@
                         android:layout="@layout/preference_checkbox"
                         android:title="24h mode"
                         app:iconSpaceReserved="false" />
+                    <SwitchPreferenceCompat
+                        android:defaultValue="true"
+                        android:key="dashboard_widget_today_2columns"
+                        android:layout="@layout/preference_checkbox"
+                        android:title="Double size"
+                        app:iconSpaceReserved="false" />
                 </PreferenceScreen>
-                <SwitchPreferenceCompat
-                    android:defaultValue="true"
-                    android:key="dashboard_widget_goals_enabled"
-                    android:layout="@layout/preference_checkbox"
+                <PreferenceScreen
+                    android:key="pref_key_dashboard_goals"
                     android:title="Goals chart"
-                    app:iconSpaceReserved="false" />
+                    app:iconSpaceReserved="false">
+                    <SwitchPreferenceCompat
+                        android:defaultValue="true"
+                        android:key="dashboard_widget_goals_enabled"
+                        android:layout="@layout/preference_checkbox"
+                        android:title="@string/function_enabled"
+                        app:iconSpaceReserved="false" />
+                    <SwitchPreferenceCompat
+                        android:defaultValue="true"
+                        android:key="dashboard_widget_goals_2columns"
+                        android:layout="@layout/preference_checkbox"
+                        android:title="Double size"
+                        app:iconSpaceReserved="false" />
+                </PreferenceScreen>
                 <SwitchPreferenceCompat
                     android:defaultValue="true"
                     android:key="dashboard_widget_steps_enabled"
