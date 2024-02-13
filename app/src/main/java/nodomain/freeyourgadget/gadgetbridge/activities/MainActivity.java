@@ -30,20 +30,30 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
+import android.util.TypedValue;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.DialogFragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.navigation.NavController;
@@ -51,8 +61,10 @@ import androidx.navigation.NavGraph;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.navigation.NavigationView;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +80,7 @@ import java.util.Set;
 import nodomain.freeyourgadget.gadgetbridge.BuildConfig;
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
+import nodomain.freeyourgadget.gadgetbridge.activities.discovery.DiscoveryActivityV2;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.DeviceService;
@@ -77,8 +90,10 @@ import nodomain.freeyourgadget.gadgetbridge.util.GB;
 import nodomain.freeyourgadget.gadgetbridge.util.GBChangeLog;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
-public class MainActivity extends AbstractGBActivity implements GBActivity {
+//TODO: extend AbstractGBActivity, but it requires actionbar that is not available
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, GBActivity {
     private static final Logger LOG = LoggerFactory.getLogger(MainActivity.class);
+    public static final int MENU_REFRESH_CODE = 1;
     public static final String ACTION_REQUEST_PERMISSIONS
             = "nodomain.freeyourgadget.gadgetbridge.activities.controlcenter.requestpermissions";
     public static final String ACTION_REQUEST_LOCATION_PERMISSIONS
@@ -142,6 +157,7 @@ public class MainActivity extends AbstractGBActivity implements GBActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        AbstractGBActivity.init(this, AbstractGBActivity.NO_ACTIONBAR);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -157,6 +173,28 @@ public class MainActivity extends AbstractGBActivity implements GBActivity {
         }
         BottomNavigationView navigationView = findViewById(R.id.bottom_nav_bar);
         NavigationUI.setupWithNavController(navigationView, navController);
+
+        NavigationView drawerNavigationView = findViewById(R.id.nav_view);
+        drawerNavigationView.setNavigationItemSelectedListener(this);
+
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.controlcenter_navigation_drawer_open, R.string.controlcenter_navigation_drawer_close);
+        drawer.setDrawerListener(toggle);
+        toggle.syncState();
+
+        if (GBApplication.areDynamicColorsEnabled()) {
+            TypedValue typedValue = new TypedValue();
+            Resources.Theme theme = getTheme();
+            theme.resolveAttribute(R.attr.colorSurface, typedValue, true);
+            @ColorInt int toolbarBackground = typedValue.data;
+            toolbar.setBackgroundColor(toolbarBackground);
+        } else {
+            toolbar.setBackgroundColor(getResources().getColor(R.color.primarydark_light));
+            toolbar.setTitleTextColor(getResources().getColor(android.R.color.white));
+        }
 
         IntentFilter filterLocal = new IntentFilter();
         filterLocal.addAction(GBApplication.ACTION_LANGUAGE_CHANGE);
@@ -261,6 +299,73 @@ public class MainActivity extends AbstractGBActivity implements GBActivity {
     protected void onDestroy() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
         super.onDestroy();
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                Intent settingsIntent = new Intent(this, SettingsActivity.class);
+                startActivityForResult(settingsIntent, MENU_REFRESH_CODE);
+                return false; //we do not want the drawer menu item to get selected
+            case R.id.action_debug:
+                Intent debugIntent = new Intent(this, DebugActivity.class);
+                startActivity(debugIntent);
+                return false;
+            case R.id.action_data_management:
+                Intent dbIntent = new Intent(this, DataManagementActivity.class);
+                startActivity(dbIntent);
+                return false;
+            case R.id.action_notification_management:
+                Intent blIntent = new Intent(this, NotificationManagementActivity.class);
+                startActivity(blIntent);
+                return false;
+            case R.id.device_action_discover:
+                launchDiscoveryActivity();
+                return false;
+            case R.id.action_quit:
+                GBApplication.quit();
+                return false;
+            case R.id.donation_link:
+                Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("https://liberapay.com/Gadgetbridge")); //TODO: centralize if ever used somewhere else
+                i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+                return false;
+            case R.id.external_changelog:
+                GBChangeLog cl = createChangeLog();
+                try {
+                    if (cl.hasChanges(false)) {
+                        cl.getMaterialLogDialog().show();
+                    } else {
+                        cl.getMaterialFullLogDialog().show();
+                    }
+                } catch (Exception ignored) {
+                    GB.toast(getBaseContext(), "Error showing Changelog", Toast.LENGTH_LONG, GB.ERROR);
+                }
+                return false;
+            case R.id.about:
+                Intent aboutIntent = new Intent(this, AboutActivity.class);
+                startActivity(aboutIntent);
+                return false;
+        }
+
+        return false;
+    }
+
+    private GBChangeLog createChangeLog() {
+        String css = GBChangeLog.DEFAULT_CSS;
+        css += "body { "
+                + "color: " + AndroidUtils.getTextColorHex(getBaseContext()) + "; "
+                + "}";
+        return new GBChangeLog(this, css);
+    }
+
+    private void launchDiscoveryActivity() {
+        startActivity(new Intent(this, DiscoveryActivityV2.class));
     }
 
     private void handleShortcut(Intent intent) {

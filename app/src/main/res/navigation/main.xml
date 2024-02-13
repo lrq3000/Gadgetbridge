@@ -9,36 +9,18 @@
         android:id="@+id/bottom_nav_dashboard"
         android:name="nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment"
         android:label="fragment_dashboard"
-        tools:layout="@layout/fragment_dashboard" >
+        tools:layout="@layout/fragment_dashboard">
         <action
             android:id="@+id/dashboard_to_devices"
             app:destination="@id/bottom_nav_devices" />
-        <action
-            android:id="@+id/dashboard_to_menu"
-            app:destination="@id/bottom_nav_menu" />
     </fragment>
     <fragment
         android:id="@+id/bottom_nav_devices"
         android:name="nodomain.freeyourgadget.gadgetbridge.activities.ControlCenterv2"
-        android:label="activity_controlcenterv2_content_main"
-        tools:layout="@layout/activity_controlcenterv2_content_main" >
-        <action
-            android:id="@+id/devices_to_menu"
-            app:destination="@id/bottom_nav_menu" />
+        android:label="fragment_devices"
+        tools:layout="@layout/fragment_controlcenterv2">
         <action
             android:id="@+id/devices_to_dashboard"
             app:destination="@id/bottom_nav_dashboard" />
-    </fragment>
-    <fragment
-        android:id="@+id/bottom_nav_menu"
-        android:name="nodomain.freeyourgadget.gadgetbridge.activities.MainMenuFragment"
-        android:label="fragment_main_menu"
-        tools:layout="@layout/fragment_main_menu" >
-        <action
-            android:id="@+id/menu_to_dashboard"
-            app:destination="@id/bottom_nav_dashboard" />
-        <action
-            android:id="@+id/menu_to_devices"
-            app:destination="@id/bottom_nav_devices" />
     </fragment>
 </navigation>

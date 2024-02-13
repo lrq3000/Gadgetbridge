@@ -96,7 +96,7 @@ public class ControlCenterv2 extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        View currentView = inflater.inflate(R.layout.activity_controlcenterv2_content_main, container, false);
+        View currentView = inflater.inflate(R.layout.fragment_controlcenterv2, container, false);
 
         deviceManager = ((GBApplication) getActivity().getApplication()).getDeviceManager();
 

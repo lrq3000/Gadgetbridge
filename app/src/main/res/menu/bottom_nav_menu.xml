@@ -9,9 +9,5 @@
         android:title="Devices"
         android:id="@+id/bottom_nav_devices"
         android:icon="@drawable/ic_devices_other"/>
-    <item
-        android:title="Menu"
-        android:id="@+id/bottom_nav_menu"
-        android:icon="@drawable/ic_menu"/>
 
 </menu>
