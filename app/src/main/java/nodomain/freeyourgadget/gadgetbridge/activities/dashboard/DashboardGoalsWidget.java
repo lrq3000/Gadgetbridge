@@ -122,28 +122,35 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
             paint.setAntiAlias(true);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setStrokeWidth(barWidth);
 
+            paint.setStrokeWidth(barWidth * 0.75f);
             paint.setColor(color_not_worn);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360, false, paint);
+            paint.setStrokeWidth(barWidth);
             paint.setColor(color_activity);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * dashboardData.getStepsGoalFactor(), false, paint);
 
             barMargin += barWidth * 1.5;
+            paint.setStrokeWidth(barWidth * 0.75f);
             paint.setColor(color_not_worn);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360, false, paint);
+            paint.setStrokeWidth(barWidth);
             paint.setColor(color_distance);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * dashboardData.getDistanceGoalFactor(), false, paint);
 
             barMargin += barWidth * 1.5;
+            paint.setStrokeWidth(barWidth * 0.75f);
             paint.setColor(color_not_worn);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360, false, paint);
+            paint.setStrokeWidth(barWidth);
             paint.setColor(color_active_time);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * dashboardData.getActiveMinutesGoalFactor(), false, paint);
 
             barMargin += barWidth * 1.5;
+            paint.setStrokeWidth(barWidth * 0.75f);
             paint.setColor(color_not_worn);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360, false, paint);
+            paint.setStrokeWidth(barWidth);
             paint.setColor(color_light_sleep);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360 * dashboardData.getSleepMinutesGoalFactor(), false, paint);
             return null;

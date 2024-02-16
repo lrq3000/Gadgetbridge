@@ -79,9 +79,10 @@ public abstract class AbstractDashboardWidget extends Fragment {
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeWidth(barWidth);
+        paint.setStrokeWidth(barWidth * 0.75f);
         paint.setColor(color_not_worn);
         canvas.drawArc(barMargin, barMargin, width - barMargin, width - barMargin, 180 + 180 * filledFactor, 180 - 180 * filledFactor, false, paint);
+        paint.setStrokeWidth(barWidth);
         paint.setColor(filledColor);
         canvas.drawArc(barMargin, barMargin, width - barMargin, width - barMargin, 180, 180 * filledFactor, false, paint);
 
