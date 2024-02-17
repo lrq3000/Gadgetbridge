@@ -115,6 +115,13 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        gridLayout.removeAllViews();
+        todayWidget = null;
+        goalsWidget = null;
+        stepsWidget = null;
+        distanceWidget = null;
+        activeTimeWidget = null;
+        sleepWidget = null;
         refresh();
     }
 
