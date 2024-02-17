@@ -112,7 +112,12 @@ public class ControlCenterv2 extends Fragment {
 
         // get activity data asynchronously, this fills the deviceActivityHashMap
         // and calls refreshPairedDevices() → notifyDataSetChanged
-        createRefreshTask("get activity data", getActivity().getApplication()).execute();
+        deviceListView.post(new Runnable() {
+            @Override
+            public void run() {
+                createRefreshTask("get activity data", getActivity().getApplication()).execute();
+            }
+        });
 
         fab = currentView.findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
