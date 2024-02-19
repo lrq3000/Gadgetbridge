@@ -39,6 +39,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.TypedValue;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -163,16 +164,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         Prefs prefs = GBApplication.getPrefs();
 
+        boolean activityTrackerAvailable = false;
+        List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
+        for (GBDevice dev : devices) {
+            if (dev.getDeviceCoordinator().supportsActivityTracking()) {
+                activityTrackerAvailable = true;
+                break;
+            }
+        }
+
         NavHostFragment navHostFragment = (NavHostFragment)
                 getSupportFragmentManager().findFragmentById(R.id.fragment_container);
         NavController navController = navHostFragment.getNavController();
-        if (!prefs.getBoolean("dashboard_as_default_view", true)) {
+        if (!prefs.getBoolean("dashboard_as_default_view", true) || !activityTrackerAvailable) {
             NavGraph navGraph = navController.getNavInflater().inflate(R.navigation.main);
             navGraph.setStartDestination(R.id.bottom_nav_devices);
             navController.setGraph(navGraph);
         }
         BottomNavigationView navigationView = findViewById(R.id.bottom_nav_bar);
         NavigationUI.setupWithNavController(navigationView, navController);
+        navigationView.setVisibility(activityTrackerAvailable ? View.VISIBLE : View.GONE);
 
         NavigationView drawerNavigationView = findViewById(R.id.nav_view);
         drawerNavigationView.setNavigationItemSelectedListener(this);
