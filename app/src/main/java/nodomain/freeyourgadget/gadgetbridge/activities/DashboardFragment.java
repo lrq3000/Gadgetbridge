@@ -56,6 +56,7 @@ import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 public class DashboardFragment extends Fragment {
+    private boolean isVisible = false;
     private Calendar day = GregorianCalendar.getInstance();
     private TextView textViewDate;
     private TextView arrowLeft;
@@ -104,10 +105,9 @@ public class DashboardFragment extends Fragment {
         activeTimeWidget = null;
         sleepWidget = null;
 
-        // Only load widgets here if the Dashboard is the initial view.
+        // Only load widgets here if the Dashboard is visible.
         // This prevents a hard crash when replacing the fragment in createWidget() via a FragmentManager.
-        Prefs prefs = GBApplication.getPrefs();
-        if (prefs.getBoolean("dashboard_as_default_view", true)) refresh();
+        if (isVisible) refresh();
 
         return dashboardView;
     }
@@ -123,6 +123,16 @@ public class DashboardFragment extends Fragment {
         activeTimeWidget = null;
         sleepWidget = null;
         refresh();
+    }
+
+    @Override
+    public void setUserVisibleHint(boolean isVisibleToUser) {
+        super.setUserVisibleHint(isVisibleToUser);
+        if (isVisibleToUser) {
+            isVisible = true;
+        } else {
+            isVisible = false;
+        }
     }
 
     @Override
