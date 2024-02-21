@@ -37,7 +37,8 @@ public abstract class AbstractDashboardWidget extends Fragment {
 
     protected DashboardFragment.DashboardData dashboardData;
 
-    protected @ColorInt int color_not_worn = Color.argb(50, 128, 128, 128);
+    protected @ColorInt int color_unknown = Color.argb(25, 128, 128, 128);
+    protected @ColorInt int color_not_worn = Color.BLACK;
     protected @ColorInt int color_worn = Color.rgb(128, 128, 128);
     protected @ColorInt int color_activity = Color.GREEN;
     protected @ColorInt int color_deep_sleep = Color.BLUE;
@@ -80,7 +81,7 @@ public abstract class AbstractDashboardWidget extends Fragment {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeWidth(barWidth * 0.75f);
-        paint.setColor(color_not_worn);
+        paint.setColor(color_unknown);
         canvas.drawArc(barMargin, barMargin, width - barMargin, width - barMargin, 180 + 180 * filledFactor, 180 - 180 * filledFactor, false, paint);
         paint.setStrokeWidth(barWidth);
         paint.setColor(filledColor);

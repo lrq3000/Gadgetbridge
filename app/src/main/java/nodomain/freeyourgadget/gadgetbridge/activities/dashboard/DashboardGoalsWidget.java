@@ -124,7 +124,7 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
             paint.setStrokeCap(Paint.Cap.ROUND);
 
             paint.setStrokeWidth(barWidth * 0.75f);
-            paint.setColor(color_not_worn);
+            paint.setColor(color_unknown);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360, false, paint);
             paint.setStrokeWidth(barWidth);
             paint.setColor(color_activity);
@@ -132,7 +132,7 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
 
             barMargin += barWidth * 1.5;
             paint.setStrokeWidth(barWidth * 0.75f);
-            paint.setColor(color_not_worn);
+            paint.setColor(color_unknown);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360, false, paint);
             paint.setStrokeWidth(barWidth);
             paint.setColor(color_distance);
@@ -140,7 +140,7 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
 
             barMargin += barWidth * 1.5;
             paint.setStrokeWidth(barWidth * 0.75f);
-            paint.setColor(color_not_worn);
+            paint.setColor(color_unknown);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360, false, paint);
             paint.setStrokeWidth(barWidth);
             paint.setColor(color_active_time);
@@ -148,7 +148,7 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
 
             barMargin += barWidth * 1.5;
             paint.setStrokeWidth(barWidth * 0.75f);
-            paint.setColor(color_not_worn);
+            paint.setColor(color_unknown);
             canvas.drawArc(barMargin, barMargin, width - barMargin, height - barMargin, 270, 360, false, paint);
             paint.setStrokeWidth(barWidth);
             paint.setColor(color_light_sleep);

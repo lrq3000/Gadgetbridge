@@ -16,24 +16,24 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.dashboard;
 
-import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-
-import com.github.mikephil.charting.charts.PieChart;
-import com.github.mikephil.charting.data.PieData;
-import com.github.mikephil.charting.data.PieDataSet;
-import com.github.mikephil.charting.data.PieEntry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,11 +65,9 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     private static final Logger LOG = LoggerFactory.getLogger(DashboardTodayWidget.class);
 
     private View todayView;
+    private ImageView todayChart;
 
     private boolean mode_24h;
-
-    private PieChart chart_0_12;
-    private PieChart chart_12_24;
 
     public DashboardTodayWidget() {
         // Required empty public constructor
@@ -93,54 +91,12 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         todayView = inflater.inflate(R.layout.dashboard_widget_today, container, false);
+        todayChart = todayView.findViewById(R.id.dashboard_today_chart);
 
         // Determine whether to draw a single or a double chart. In case 24h mode is selected,
         // use just the outer chart (chart_12_24) for all data.
         Prefs prefs = GBApplication.getPrefs();
         mode_24h = prefs.getBoolean("dashboard_widget_today_24h", false);
-
-        // Initialize outer chart
-        chart_12_24 = todayView.findViewById(R.id.dashboard_piechart_today_12_24);
-        chart_12_24.getDescription().setEnabled(false);
-        chart_12_24.getLegend().setEnabled(false);
-        chart_12_24.setDrawHoleEnabled(true);
-        chart_12_24.setHoleColor(Color.TRANSPARENT);
-        chart_12_24.setRotationEnabled(false);
-        chart_12_24.setDrawEntryLabels(false);
-        chart_12_24.setHighlightPerTapEnabled(false);
-        if (mode_24h) {
-            chart_12_24.setHoleRadius(80f);
-            chart_12_24.setTransparentCircleRadius(81f);
-            chart_12_24.setTransparentCircleColor(GBApplication.getTextColor(getContext()));
-        } else {
-            chart_12_24.setHoleRadius(91f);
-            chart_12_24.setTransparentCircleRadius(91f);
-            chart_12_24.setTransparentCircleColor(Color.TRANSPARENT);
-        }
-        ArrayList<PieEntry> emptyChartEntries = new ArrayList<>();
-        PieDataSet emptyChartDataSet = new PieDataSet(emptyChartEntries, "");
-        emptyChartDataSet.setDrawValues(false);
-        emptyChartDataSet.setColor(Color.TRANSPARENT);
-        PieData emptyChartData = new PieData(emptyChartDataSet);
-        chart_12_24.setData(emptyChartData);
-
-        // Initialize inner chart
-        chart_0_12 = todayView.findViewById(R.id.dashboard_piechart_today_0_12);
-        if (mode_24h) {
-            chart_0_12.setVisibility(View.INVISIBLE);
-        } else {
-            chart_0_12.getDescription().setEnabled(false);
-            chart_0_12.getLegend().setEnabled(false);
-            chart_0_12.setDrawHoleEnabled(true);
-            chart_0_12.setHoleColor(Color.TRANSPARENT);
-            chart_0_12.setHoleRadius(90f);
-            chart_0_12.setTransparentCircleRadius(91f);
-            chart_0_12.setTransparentCircleColor(GBApplication.getTextColor(getContext()));
-            chart_0_12.setRotationEnabled(false);
-            chart_0_12.setDrawEntryLabels(false);
-            chart_0_12.setHighlightPerTapEnabled(false);
-            chart_0_12.setData(emptyChartData);
-        }
 
         // Initialize legend
         TextView legend = todayView.findViewById(R.id.dashboard_piechart_legend);
@@ -157,36 +113,6 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
         legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_worn).append(" ").append(l_activity).append("\n").append(l_light_sleep).append(" ").append(l_deep_sleep));
 
-        // Initialize scale chart
-        PieChart scale = todayView.findViewById(R.id.dashboard_piechart_scale);
-        scale.getDescription().setEnabled(false);
-        scale.getLegend().setEnabled(false);
-        scale.setDrawHoleEnabled(true);
-        scale.setHoleColor(Color.TRANSPARENT);
-        scale.setHoleRadius(75f);
-        scale.setTransparentCircleRadius(75f);
-        scale.setRotationEnabled(false);
-        scale.setHighlightPerTapEnabled(false);
-        scale.setEntryLabelColor(GBApplication.getTextColor(getContext()));
-        ArrayList<PieEntry> scaleEntries = new ArrayList<>();
-        if (mode_24h) {
-            scale.setRotationAngle(285f);
-            for (int i = 2; i <= 24; i+= 2) {
-                scaleEntries.add(new PieEntry(1, String.valueOf(i)));
-            }
-        } else {
-            scale.setRotationAngle(315f);
-            for (int i = 3; i <= 12; i += 3) {
-                scaleEntries.add(new PieEntry(1, String.format("%d / %d", i, i + 12)));
-            }
-        }
-        PieDataSet scaleDataSet = new PieDataSet(scaleEntries, "Time scale");
-        scaleDataSet.setSliceSpace(0f);
-        scaleDataSet.setDrawValues(false);
-        scaleDataSet.setColor(Color.TRANSPARENT);
-        PieData scaleData = new PieData(scaleDataSet);
-        scale.setData(scaleData);
-
         fillData();
 
         return todayView;
@@ -195,7 +121,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     @Override
     public void onResume() {
         super.onResume();
-        if (chart_0_12 != null) fillData();
+        if (todayChart != null) fillData();
     }
 
     protected void fillData() {
@@ -211,6 +137,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     private class FillDataAsyncTask extends AsyncTask<Void, Void, Void> {
         private final TreeMap<Long, Integer> activityTimestamps = new TreeMap<>();
         private final List<GeneralizedActivity> generalizedActivities = new ArrayList<>();
+        Bitmap todayBitmap;
 
         private void addActivity(long timeFrom, long timeTo, int activityKind) {
             for (long i = timeFrom; i<=timeTo; i++) {
@@ -301,89 +228,144 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             }
             createGeneralizedActivities();
 
-            // Add pie slice entries
-            ArrayList<PieEntry> entries_0_12 = new ArrayList<>();
-            ArrayList<Integer> colors_0_12 = new ArrayList<>();
-            ArrayList<PieEntry> entries_12_24 = new ArrayList<>();
-            ArrayList<Integer> colors_12_24 = new ArrayList<>();
+            // Prepare circular chart
+            int width = 500;
+            int height = 500;
+            int barWidth = 40;
+            int hourTextSp = 12;
+            float hourTextPixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, hourTextSp, requireContext().getResources().getDisplayMetrics());
+            float outerCircleMargin = mode_24h ? barWidth / 2f : barWidth / 2f + hourTextPixels * 1.3f;
+            float innerCircleMargin = outerCircleMargin + barWidth * 1.3f;
+            int degreeFactor = mode_24h ? 240 : 120;
+            todayBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(todayBitmap);
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setStyle(Paint.Style.STROKE);
+
+            // Draw clock stripes
+            float clockMargin = outerCircleMargin + (mode_24h ? barWidth : barWidth*2.3f);
+            int clockStripesInterval = mode_24h ? 15 : 30;
+            float clockStripesWidth = barWidth / 3f;
+            paint.setStrokeWidth(clockStripesWidth);
+            paint.setColor(color_worn);
+            for (int i=0; i<360; i+=clockStripesInterval) {
+                canvas.drawArc(clockMargin, clockMargin, width - clockMargin, height - clockMargin, i, 1, false, paint);
+            }
+
+            // Draw hours
+            Paint textPaint = new Paint();
+            textPaint.setAntiAlias(true);
+            textPaint.setColor(color_worn);
+            textPaint.setTextSize(hourTextPixels);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            Rect textBounds = new Rect();
+            if (mode_24h) {
+                textPaint.getTextBounds("6", 0, 1, textBounds);
+                canvas.drawText("6", width - (clockMargin + clockStripesWidth + textBounds.width()), height / 2f + textBounds.height() / 2f, textPaint);
+                textPaint.getTextBounds("12", 0, 2, textBounds);
+                canvas.drawText("12", width / 2f, height - (clockMargin + clockStripesWidth), textPaint);
+                textPaint.getTextBounds("18", 0, 2, textBounds);
+                canvas.drawText("18", clockMargin + clockStripesWidth + textBounds.width() / 2f, height / 2f + textBounds.height() / 2f, textPaint);
+                textPaint.getTextBounds("24", 0, 2, textBounds);
+                canvas.drawText("24", width / 2f, clockMargin + clockStripesWidth + textBounds.height(), textPaint);
+            } else {
+                textPaint.getTextBounds("3", 0, 1, textBounds);
+                canvas.drawText("3", width - (clockMargin + clockStripesWidth + textBounds.width()), height / 2f + textBounds.height() / 2f, textPaint);
+                textPaint.getTextBounds("6", 0, 1, textBounds);
+                canvas.drawText("6", width / 2f, height - (clockMargin + clockStripesWidth), textPaint);
+                textPaint.getTextBounds("9", 0, 1, textBounds);
+                canvas.drawText("9", clockMargin + clockStripesWidth + textBounds.width() / 2f, height / 2f + textBounds.height() / 2f, textPaint);
+                textPaint.getTextBounds("12", 0, 2, textBounds);
+                canvas.drawText("12", width / 2f, clockMargin + clockStripesWidth + textBounds.height(), textPaint);
+                textPaint.getTextBounds("15", 0, 2, textBounds);
+                canvas.drawText("15", width - textBounds.width() / 2f, height / 2f + textBounds.height() / 2f, textPaint);
+                textPaint.getTextBounds("18", 0, 2, textBounds);
+                canvas.drawText("18", width / 2f, height - textBounds.height() / 2f, textPaint);
+                textPaint.getTextBounds("21", 0, 2, textBounds);
+                canvas.drawText("21", textBounds.width() / 2f, height / 2f + textBounds.height() / 2f, textPaint);
+                textPaint.getTextBounds("24", 0, 2, textBounds);
+                canvas.drawText("24", width / 2f, textBounds.height(), textPaint);
+            }
+
+            // Draw generalized activities on circular chart
             long secondIndex = dashboardData.timeFrom;
+            long currentTime = Calendar.getInstance().getTimeInMillis() / 1000;
             for (GeneralizedActivity activity : generalizedActivities) {
-                // Use correct entries list for this part of the day
-                ArrayList<PieEntry> entries = entries_0_12;
-                ArrayList<Integer> colors = colors_0_12;
-                if (mode_24h || activity.timeFrom >= midDaySecond) {
-                    entries = entries_12_24;
-                    colors = colors_12_24;
-                }
+                // Determine margin depending on 24h/12h mode
+                float margin = (mode_24h || activity.timeFrom >= midDaySecond) ? outerCircleMargin : innerCircleMargin;
                 // Draw inactive slices
                 if (!mode_24h && secondIndex < midDaySecond && activity.timeFrom >= midDaySecond) {
-                    entries_0_12.add(new PieEntry(midDaySecond - secondIndex, "Inactive"));
-                    colors_0_12.add(color_worn);
+                    paint.setStrokeWidth(barWidth / 3f);
+                    paint.setColor(color_worn);
+                    canvas.drawArc(innerCircleMargin, innerCircleMargin, width - innerCircleMargin, height - innerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (midDaySecond - secondIndex) / degreeFactor, false, paint);
                     secondIndex = midDaySecond;
                 }
                 if (activity.timeFrom > secondIndex) {
-                    entries.add(new PieEntry(activity.timeFrom - secondIndex, "Inactive"));
-                    colors.add(color_worn);
+                    paint.setStrokeWidth(barWidth / 3f);
+                    paint.setColor(color_worn);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (activity.timeFrom - secondIndex) / degreeFactor, false, paint);
                 }
-                // Draw activity slices
+                long start_angle = 270 + (activity.timeFrom - dashboardData.timeFrom) / degreeFactor;
+                long sweep_angle = (activity.timeTo - activity.timeFrom) / degreeFactor;
                 if (activity.activityKind == ActivityKind.TYPE_NOT_WORN) {
-                    entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Not worn"));
-                    colors.add(color_not_worn);
-                    secondIndex = activity.timeTo;
+                    paint.setStrokeWidth(barWidth / 3f);
+                    paint.setColor(color_not_worn);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
                 } else if (activity.activityKind == ActivityKind.TYPE_REM_SLEEP || activity.activityKind == ActivityKind.TYPE_LIGHT_SLEEP || activity.activityKind == ActivityKind.TYPE_SLEEP) {
-                    entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Light sleep"));
-                    colors.add(color_light_sleep);
-                    secondIndex = activity.timeTo;
+                    paint.setStrokeWidth(barWidth);
+                    paint.setColor(color_light_sleep);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
                 } else if (activity.activityKind == ActivityKind.TYPE_DEEP_SLEEP) {
-                    entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Deep sleep"));
-                    colors.add(color_deep_sleep);
-                    secondIndex = activity.timeTo;
+                    paint.setStrokeWidth(barWidth);
+                    paint.setColor(color_deep_sleep);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
                 } else {
-                    entries.add(new PieEntry(activity.timeTo - activity.timeFrom, "Active"));
-                    colors.add(color_activity);
-                    secondIndex = activity.timeTo;
+                    paint.setStrokeWidth(barWidth);
+                    paint.setColor(color_activity);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
                 }
+                secondIndex = activity.timeTo;
             }
-            // Fill remaining time until midnight
-            long currentTime = Calendar.getInstance().getTimeInMillis() / 1000;
+            // Fill remaining time until current time
             if (!mode_24h && currentTime > dashboardData.timeFrom && currentTime < midDaySecond) {
-                // Fill with unknown slice up until current time
-                entries_0_12.add(new PieEntry(currentTime - secondIndex, "Unknown"));
-                colors_0_12.add(color_worn);
-                // Draw transparent slice for remaining time until midday
-                entries_0_12.add(new PieEntry(midDaySecond - currentTime, "Empty"));
-                colors_0_12.add(Color.TRANSPARENT);
+                // Fill inner bar up until current time
+                paint.setStrokeWidth(barWidth / 3f);
+                paint.setColor(color_worn);
+                canvas.drawArc(innerCircleMargin, innerCircleMargin, width - innerCircleMargin, height - innerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (currentTime - secondIndex) / degreeFactor, false, paint);
+                // Fill inner bar up until midday
+                paint.setStrokeWidth(barWidth / 3f);
+                paint.setColor(color_unknown);
+                canvas.drawArc(innerCircleMargin, innerCircleMargin, width - innerCircleMargin, height - innerCircleMargin, 270 + (currentTime - dashboardData.timeFrom) / degreeFactor, (midDaySecond - currentTime) / degreeFactor, false, paint);
+                // Fill outer bar up until midnight
+                paint.setStrokeWidth(barWidth / 3f);
+                paint.setColor(color_unknown);
+                canvas.drawArc(outerCircleMargin, outerCircleMargin, width - outerCircleMargin, height - outerCircleMargin, 0, 360, false, paint);
             }
             if ((mode_24h || currentTime >= midDaySecond) && currentTime < dashboardData.timeTo) {
-                // Fill with unknown slice up until current time
-                entries_12_24.add(new PieEntry(currentTime - secondIndex, "Unknown"));
-                colors_12_24.add(color_worn);
-                // Draw transparent slice for remaining time until midnight
-                entries_12_24.add(new PieEntry(dashboardData.timeTo - currentTime, "Empty"));
-                colors_12_24.add(Color.TRANSPARENT);
+                // Fill outer bar up until current time
+                paint.setStrokeWidth(barWidth / 3f);
+                paint.setColor(color_worn);
+                canvas.drawArc(outerCircleMargin, outerCircleMargin, width - outerCircleMargin, height - outerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (currentTime - secondIndex) / degreeFactor, false, paint);
+                // Fill outer bar up until midnight
+                paint.setStrokeWidth(barWidth / 3f);
+                paint.setColor(color_unknown);
+                canvas.drawArc(outerCircleMargin, outerCircleMargin, width - outerCircleMargin, height - outerCircleMargin, 270 + (currentTime - dashboardData.timeFrom) / degreeFactor, (dashboardData.timeTo - currentTime) / degreeFactor, false, paint);
             }
             if (secondIndex < dashboardData.timeTo && currentTime > dashboardData.timeTo) {
-                // Draw transparent slice for remaining time until midnight
-                entries_12_24.add(new PieEntry(dashboardData.timeTo - secondIndex, "Unknown"));
-                colors_12_24.add(color_worn);
+                // Fill outer bar up until midnight
+                paint.setStrokeWidth(barWidth / 3f);
+                paint.setColor(color_worn);
+                canvas.drawArc(outerCircleMargin, outerCircleMargin, width - outerCircleMargin, height - outerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (dashboardData.timeTo - secondIndex) / degreeFactor, false, paint);
             }
 
-            // Draw charts
-            if (!mode_24h) {
-                PieDataSet dataSet_0_12 = new PieDataSet(entries_0_12, "Today 0-12h");
-                dataSet_0_12.setSliceSpace(0f);
-                dataSet_0_12.setDrawValues(false);
-                dataSet_0_12.setColors(colors_0_12);
-                chart_0_12.setData(new PieData(dataSet_0_12));
-                chart_0_12.invalidate();
-            }
-            PieDataSet dataSet_12_24 = new PieDataSet(entries_12_24, "Today 12-24h");
-            dataSet_12_24.setSliceSpace(0f);
-            dataSet_12_24.setDrawValues(false);
-            dataSet_12_24.setColors(colors_12_24);
-            chart_12_24.setData(new PieData(dataSet_12_24));
-            chart_12_24.invalidate();
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void unused) {
+            super.onPostExecute(unused);
+            todayChart.setImageBitmap(todayBitmap);
         }
     }
 

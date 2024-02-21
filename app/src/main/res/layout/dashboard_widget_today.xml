@@ -11,47 +11,19 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-
-        <RelativeLayout
+        <ImageView
+            android:id="@+id/dashboard_today_chart"
             android:layout_width="0dp"
             android:layout_height="0dp"
-            android:layout_marginHorizontal="10dp"
+            android:layout_marginHorizontal="15dp"
             android:layout_marginVertical="5dp"
             android:gravity="center"
             app:layout_constraintDimensionRatio="H,1:1"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_margin="35dp"
-                android:layout_centerInParent="true"
-                android:src="@drawable/clock_face" />
-
-            <com.github.mikephil.charting.charts.PieChart
-                android:id="@+id/dashboard_piechart_today_12_24"
-                android:layout_height="match_parent"
-                android:layout_width="match_parent"
-                android:layout_centerInParent="true" />
-
-            <com.github.mikephil.charting.charts.PieChart
-                android:id="@+id/dashboard_piechart_today_0_12"
-                android:layout_height="match_parent"
-                android:layout_width="match_parent"
-                android:layout_centerInParent="true"
-                android:layout_margin="15dp" />
-
-            <com.github.mikephil.charting.charts.PieChart
-                android:id="@+id/dashboard_piechart_scale"
-                android:layout_height="match_parent"
-                android:layout_width="match_parent"
-                android:layout_margin="50dp"
-                android:layout_centerInParent="true" />
-
-        </RelativeLayout>
+            app:layout_constraintTop_toTopOf="parent"
+            android:scaleType="fitXY" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <TextView
