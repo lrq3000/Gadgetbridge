@@ -315,7 +315,12 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                     entries = entries_12_24;
                     colors = colors_12_24;
                 }
-                // Draw inactive slice
+                // Draw inactive slices
+                if (!mode_24h && secondIndex < midDaySecond && activity.timeFrom >= midDaySecond) {
+                    entries_0_12.add(new PieEntry(midDaySecond - secondIndex, "Inactive"));
+                    colors_0_12.add(color_worn);
+                    secondIndex = midDaySecond;
+                }
                 if (activity.timeFrom > secondIndex) {
                     entries.add(new PieEntry(activity.timeFrom - secondIndex, "Inactive"));
                     colors.add(color_worn);
@@ -356,6 +361,11 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 // Draw transparent slice for remaining time until midnight
                 entries_12_24.add(new PieEntry(dashboardData.timeTo - currentTime, "Empty"));
                 colors_12_24.add(Color.TRANSPARENT);
+            }
+            if (secondIndex < dashboardData.timeTo && currentTime > dashboardData.timeTo) {
+                // Draw transparent slice for remaining time until midnight
+                entries_12_24.add(new PieEntry(dashboardData.timeTo - secondIndex, "Unknown"));
+                colors_12_24.add(color_worn);
             }
 
             // Draw charts
