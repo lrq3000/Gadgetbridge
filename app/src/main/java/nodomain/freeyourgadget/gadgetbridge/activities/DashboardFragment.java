@@ -16,7 +16,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -32,6 +35,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentContainerView;
 import androidx.gridlayout.widget.GridLayout;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.material.card.MaterialCardView;
 
@@ -51,6 +55,7 @@ import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardGoalsW
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardSleepWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardStepsWidget;
 import nodomain.freeyourgadget.gadgetbridge.activities.dashboard.DashboardTodayWidget;
+import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.util.DashboardUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
@@ -69,6 +74,19 @@ public class DashboardFragment extends Fragment {
     private DashboardActiveTimeWidget activeTimeWidget;
     private DashboardSleepWidget sleepWidget;
     private DashboardData dashboardData = new DashboardData();
+
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action != null && action.equals(GBDevice.ACTION_DEVICE_CHANGED)) {
+                GBDevice dev = intent.getParcelableExtra(GBDevice.EXTRA_DEVICE);
+                if (dev != null && !dev.isBusy()) {
+                    refresh();
+                }
+            }
+        }
+    };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -109,20 +127,23 @@ public class DashboardFragment extends Fragment {
         // This prevents a hard crash when replacing the fragment in createWidget() via a FragmentManager.
         if (isVisible) refresh();
 
+        IntentFilter filterLocal = new IntentFilter();
+        filterLocal.addAction(GBDevice.ACTION_DEVICE_CHANGED);
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(mReceiver, filterLocal);
+
         return dashboardView;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        gridLayout.removeAllViews();
-        todayWidget = null;
-        goalsWidget = null;
-        stepsWidget = null;
-        distanceWidget = null;
-        activeTimeWidget = null;
-        sleepWidget = null;
-        refresh();
+        fullRefresh();
+    }
+
+    @Override
+    public void onDestroy() {
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(mReceiver);
+        super.onDestroy();
     }
 
     @Override
@@ -162,6 +183,10 @@ public class DashboardFragment extends Fragment {
                 day.setTimeInMillis(timeMillis);
             }
         }
+        fullRefresh();
+    }
+
+    private void fullRefresh() {
         gridLayout.removeAllViews();
         todayWidget = null;
         goalsWidget = null;
