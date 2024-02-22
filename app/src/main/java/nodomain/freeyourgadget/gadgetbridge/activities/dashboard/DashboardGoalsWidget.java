@@ -34,8 +34,10 @@ import android.widget.TextView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
+import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 /**
  * A simple {@link AbstractDashboardWidget} subclass.
@@ -83,6 +85,9 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
         l_sleep.setSpan(new ForegroundColorSpan(color_light_sleep), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
         legend.setText(legendBuilder.append(l_steps).append(" ").append(l_distance).append("\n").append(l_active_time).append(" ").append(l_sleep));
+
+        Prefs prefs = GBApplication.getPrefs();
+        legend.setVisibility(prefs.getBoolean("dashboard_widget_goals_legend", true) ? View.VISIBLE : View.GONE);
 
         fillData();
 

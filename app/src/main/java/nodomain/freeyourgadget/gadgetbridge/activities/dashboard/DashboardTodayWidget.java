@@ -113,6 +113,8 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
         legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_worn).append(" ").append(l_activity).append("\n").append(l_light_sleep).append(" ").append(l_deep_sleep));
 
+        legend.setVisibility(prefs.getBoolean("dashboard_widget_today_legend", true) ? View.VISIBLE : View.GONE);
+
         fillData();
 
         return todayView;

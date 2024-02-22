@@ -109,6 +109,12 @@
                         android:layout="@layout/preference_checkbox"
                         android:title="Double size"
                         app:iconSpaceReserved="false" />
+                    <SwitchPreferenceCompat
+                        android:defaultValue="true"
+                        android:key="dashboard_widget_today_legend"
+                        android:layout="@layout/preference_checkbox"
+                        android:title="Show legend"
+                        app:iconSpaceReserved="false" />
                 </PreferenceScreen>
                 <PreferenceScreen
                     android:key="pref_key_dashboard_goals"
@@ -125,6 +131,12 @@
                         android:key="dashboard_widget_goals_2columns"
                         android:layout="@layout/preference_checkbox"
                         android:title="Double size"
+                        app:iconSpaceReserved="false" />
+                    <SwitchPreferenceCompat
+                        android:defaultValue="true"
+                        android:key="dashboard_widget_goals_legend"
+                        android:layout="@layout/preference_checkbox"
+                        android:title="Show legend"
                         app:iconSpaceReserved="false" />
                 </PreferenceScreen>
                 <SwitchPreferenceCompat
