@@ -78,6 +78,7 @@ public class DashboardSleepWidget extends AbstractDashboardWidget {
 
     @Override
     protected void fillData() {
+        if (sleepGauge == null) return;
         sleepGauge.post(new Runnable() {
             @Override
             public void run() {

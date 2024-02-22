@@ -97,6 +97,7 @@ public class DashboardGoalsWidget extends AbstractDashboardWidget {
 
     @Override
     protected void fillData() {
+        if (goalsView == null) return;
         goalsView.post(new Runnable() {
             @Override
             public void run() {

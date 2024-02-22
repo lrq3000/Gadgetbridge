@@ -76,6 +76,7 @@ public class DashboardStepsWidget extends AbstractDashboardWidget {
 
     @Override
     protected void fillData() {
+        if (stepsGauge == null) return;
         stepsGauge.post(new Runnable() {
             @Override
             public void run() {

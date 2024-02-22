@@ -79,6 +79,7 @@ public class DashboardDistanceWidget extends AbstractDashboardWidget {
 
     @Override
     protected void fillData() {
+        if (distanceGauge == null) return;
         distanceGauge.post(new Runnable() {
             @Override
             public void run() {

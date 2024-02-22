@@ -78,6 +78,7 @@ public class DashboardActiveTimeWidget extends AbstractDashboardWidget {
 
     @Override
     protected void fillData() {
+        if (activeTimeGauge == null) return;
         activeTimeGauge.post(new Runnable() {
             @Override
             public void run() {

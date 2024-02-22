@@ -125,6 +125,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
     }
 
     protected void fillData() {
+        if (todayView == null) return;
         todayView.post(new Runnable() {
             @Override
             public void run() {
