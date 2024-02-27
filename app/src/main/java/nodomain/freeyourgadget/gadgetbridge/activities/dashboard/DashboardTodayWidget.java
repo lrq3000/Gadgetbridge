@@ -345,8 +345,8 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 }
                 secondIndex = activity.timeTo;
             }
-            // Fill remaining time until current time
-            if (!mode_24h && currentTime > dashboardData.timeFrom && currentTime < midDaySecond) {
+            // Fill remaining time until current time in 12h mode before midday
+            if (!mode_24h && currentTime < midDaySecond) {
                 // Fill inner bar up until current time
                 paint.setStrokeWidth(barWidth / 3f);
                 paint.setColor(color_worn);
@@ -360,7 +360,15 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 paint.setColor(color_unknown);
                 canvas.drawArc(outerCircleMargin, outerCircleMargin, width - outerCircleMargin, height - outerCircleMargin, 0, 360, false, paint);
             }
+            // Fill remaining time until current time in 24h mode or in 12h mode after midday
             if ((mode_24h || currentTime >= midDaySecond) && currentTime < dashboardData.timeTo) {
+                // Fill inner bar up until midday
+                if (!mode_24h && secondIndex < midDaySecond) {
+                    paint.setStrokeWidth(barWidth / 3f);
+                    paint.setColor(color_worn);
+                    canvas.drawArc(innerCircleMargin, innerCircleMargin, width - innerCircleMargin, height - innerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (midDaySecond - secondIndex) / degreeFactor, false, paint);
+                    secondIndex = midDaySecond;
+                }
                 // Fill outer bar up until current time
                 paint.setStrokeWidth(barWidth / 3f);
                 paint.setColor(color_worn);
@@ -370,6 +378,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 paint.setColor(color_unknown);
                 canvas.drawArc(outerCircleMargin, outerCircleMargin, width - outerCircleMargin, height - outerCircleMargin, 270 + (currentTime - dashboardData.timeFrom) / degreeFactor, (dashboardData.timeTo - currentTime) / degreeFactor, false, paint);
             }
+            // Only when displaying a past day
             if (secondIndex < dashboardData.timeTo && currentTime > dashboardData.timeTo) {
                 // Fill outer bar up until midnight
                 paint.setStrokeWidth(barWidth / 3f);
