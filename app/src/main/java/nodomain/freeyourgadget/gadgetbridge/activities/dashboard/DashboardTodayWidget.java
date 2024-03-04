@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -185,6 +186,57 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             }
         }
 
+        private void calculateWornSessions(List<ActivitySample> samples) {
+            int firstTimestamp = dashboardData.timeFrom;
+            int lastTimestamp = 0;
+            int currentKind = ActivityKind.TYPE_UNKNOWN;
+            for (ActivitySample sample : samples) {
+                if (lastTimestamp == 0) lastTimestamp = sample.getTimestamp();
+                // Determine initial ActivityKind at the start of the day
+                if (currentKind == ActivityKind.TYPE_UNKNOWN) {
+                    if (sample.getHeartRate() < 10) {
+                        currentKind = ActivityKind.TYPE_NOT_WORN;
+                    } else {
+                        currentKind = ActivityKind.TYPE_NOT_MEASURED;
+                    }
+                }
+                // Handle gaps in the heart rate samples as not-worn sessions
+                if (sample.getTimestamp() > lastTimestamp + 60) {
+                    currentKind = ActivityKind.TYPE_NOT_WORN;
+                }
+                // At the switching timestamp from not-worn -> worn we add a not-worn session
+                if (currentKind != ActivityKind.TYPE_NOT_MEASURED) {
+                    if ((sample.getHeartRate() > 10 && firstTimestamp != lastTimestamp) ||
+                            (sample.getTimestamp() > lastTimestamp + 60)) {
+                        LOG.info("Registered not-worn session from " + firstTimestamp + " to " + lastTimestamp);
+                        addActivity(firstTimestamp, lastTimestamp, ActivityKind.TYPE_NOT_WORN);
+                        firstTimestamp = sample.getTimestamp();
+                        lastTimestamp = sample.getTimestamp();
+                        currentKind = ActivityKind.TYPE_NOT_MEASURED;
+                        continue;
+                    }
+                }
+                // At the switching timestamp from worn -> not-worn we add a worn session
+                if (currentKind != ActivityKind.TYPE_NOT_WORN) {
+                    if (sample.getHeartRate() < 10 && firstTimestamp != lastTimestamp) {
+                        LOG.info("Registered worn session from " + firstTimestamp + " to " + lastTimestamp);
+                        addActivity(firstTimestamp, lastTimestamp, ActivityKind.TYPE_NOT_MEASURED);
+                        firstTimestamp = sample.getTimestamp();
+                        lastTimestamp = sample.getTimestamp();
+                        currentKind = ActivityKind.TYPE_NOT_WORN;
+                        continue;
+                    }
+                }
+                lastTimestamp = sample.getTimestamp();
+            }
+            // After handling all activity samples, handle the remaining time until either midnight or current time
+            if (firstTimestamp != lastTimestamp) {
+                lastTimestamp = (int) Math.min(dashboardData.timeTo, Calendar.getInstance().getTimeInMillis() / 1000);
+                LOG.info("Registered " + (currentKind == ActivityKind.TYPE_NOT_MEASURED ? "worn" : "not-worn") + " session from " + firstTimestamp + " to " + lastTimestamp);
+                addActivity(firstTimestamp, lastTimestamp, currentKind);
+            }
+        }
+
         private void createGeneralizedActivities() {
             GeneralizedActivity previous = null;
             long midDaySecond = dashboardData.timeFrom + (12 * 60 * 60);
@@ -218,8 +270,12 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             } catch (Exception e) {
                 LOG.warn("Could not retrieve activity amounts: ", e);
             }
+            Collections.sort(allActivitySamples, (lhs, rhs) -> Integer.valueOf(lhs.getTimestamp()).compareTo(rhs.getTimestamp()));
 
-            // Integrate and chronologically order various data from multiple devices
+            // Determine worn and not-worn sessions from heart rate samples
+            calculateWornSessions(allActivitySamples);
+
+            // Integrate various data from multiple devices
             long midDaySecond = dashboardData.timeFrom + (12 * 60 * 60);
             for (ActivitySample sample : allActivitySamples) {
                 // Handle only TYPE_NOT_WORN and TYPE_SLEEP (including variants) here
@@ -315,18 +371,22 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 // Draw inactive slices
                 if (!mode_24h && secondIndex < midDaySecond && activity.timeFrom >= midDaySecond) {
                     paint.setStrokeWidth(barWidth / 3f);
-                    paint.setColor(color_worn);
+                    paint.setColor(color_unknown);
                     canvas.drawArc(innerCircleMargin, innerCircleMargin, width - innerCircleMargin, height - innerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (midDaySecond - secondIndex) / degreeFactor, false, paint);
                     secondIndex = midDaySecond;
                 }
                 if (activity.timeFrom > secondIndex) {
                     paint.setStrokeWidth(barWidth / 3f);
-                    paint.setColor(color_worn);
+                    paint.setColor(color_unknown);
                     canvas.drawArc(margin, margin, width - margin, height - margin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (activity.timeFrom - secondIndex) / degreeFactor, false, paint);
                 }
                 long start_angle = 270 + (activity.timeFrom - dashboardData.timeFrom) / degreeFactor;
                 long sweep_angle = (activity.timeTo - activity.timeFrom) / degreeFactor;
-                if (activity.activityKind == ActivityKind.TYPE_NOT_WORN) {
+                if (activity.activityKind == ActivityKind.TYPE_NOT_MEASURED) {
+                    paint.setStrokeWidth(barWidth / 3f);
+                    paint.setColor(color_worn);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
+                } else if (activity.activityKind == ActivityKind.TYPE_NOT_WORN) {
                     paint.setStrokeWidth(barWidth / 3f);
                     paint.setColor(color_not_worn);
                     canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
@@ -349,7 +409,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             if (!mode_24h && currentTime < midDaySecond) {
                 // Fill inner bar up until current time
                 paint.setStrokeWidth(barWidth / 3f);
-                paint.setColor(color_worn);
+                paint.setColor(color_unknown);
                 canvas.drawArc(innerCircleMargin, innerCircleMargin, width - innerCircleMargin, height - innerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (currentTime - secondIndex) / degreeFactor, false, paint);
                 // Fill inner bar up until midday
                 paint.setStrokeWidth(barWidth / 3f);
@@ -365,13 +425,13 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 // Fill inner bar up until midday
                 if (!mode_24h && secondIndex < midDaySecond) {
                     paint.setStrokeWidth(barWidth / 3f);
-                    paint.setColor(color_worn);
+                    paint.setColor(color_unknown);
                     canvas.drawArc(innerCircleMargin, innerCircleMargin, width - innerCircleMargin, height - innerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (midDaySecond - secondIndex) / degreeFactor, false, paint);
                     secondIndex = midDaySecond;
                 }
                 // Fill outer bar up until current time
                 paint.setStrokeWidth(barWidth / 3f);
-                paint.setColor(color_worn);
+                paint.setColor(color_unknown);
                 canvas.drawArc(outerCircleMargin, outerCircleMargin, width - outerCircleMargin, height - outerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (currentTime - secondIndex) / degreeFactor, false, paint);
                 // Fill outer bar up until midnight
                 paint.setStrokeWidth(barWidth / 3f);
@@ -382,7 +442,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             if (secondIndex < dashboardData.timeTo && currentTime > dashboardData.timeTo) {
                 // Fill outer bar up until midnight
                 paint.setStrokeWidth(barWidth / 3f);
-                paint.setColor(color_worn);
+                paint.setColor(color_unknown);
                 canvas.drawArc(outerCircleMargin, outerCircleMargin, width - outerCircleMargin, height - outerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (dashboardData.timeTo - secondIndex) / degreeFactor, false, paint);
             }
 
