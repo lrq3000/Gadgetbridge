@@ -198,53 +198,29 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         }
 
         private void calculateWornSessions(List<ActivitySample> samples) {
-            int firstTimestamp = dashboardData.timeFrom;
+            int firstTimestamp = 0;
             int lastTimestamp = 0;
-            int currentKind = ActivityKind.TYPE_UNKNOWN;
             for (ActivitySample sample : samples) {
+                if (sample.getHeartRate() < 10 && firstTimestamp == 0) continue;
+                if (firstTimestamp == 0) firstTimestamp = sample.getTimestamp();
                 if (lastTimestamp == 0) lastTimestamp = sample.getTimestamp();
-                // Determine initial ActivityKind at the start of the day
-                if (currentKind == ActivityKind.TYPE_UNKNOWN) {
+                if ((sample.getHeartRate() < 10 || sample.getTimestamp() > lastTimestamp + 60) && firstTimestamp != lastTimestamp) {
+                    LOG.info("Registered worn session from " + firstTimestamp + " to " + lastTimestamp);
+                    addActivity(firstTimestamp, lastTimestamp, ActivityKind.TYPE_NOT_MEASURED);
                     if (sample.getHeartRate() < 10) {
-                        currentKind = ActivityKind.TYPE_NOT_WORN;
+                        firstTimestamp = 0;
+                        lastTimestamp = 0;
                     } else {
-                        currentKind = ActivityKind.TYPE_NOT_MEASURED;
-                    }
-                }
-                // Handle gaps in the heart rate samples as not-worn sessions
-                if (sample.getTimestamp() > lastTimestamp + 60) {
-                    currentKind = ActivityKind.TYPE_NOT_WORN;
-                }
-                // At the switching timestamp from not-worn -> worn we add a not-worn session
-                if (currentKind != ActivityKind.TYPE_NOT_MEASURED) {
-                    if ((sample.getHeartRate() > 10 && firstTimestamp != lastTimestamp) ||
-                            (sample.getTimestamp() > lastTimestamp + 60)) {
-                        LOG.info("Registered not-worn session from " + firstTimestamp + " to " + lastTimestamp);
-                        addActivity(firstTimestamp, lastTimestamp, ActivityKind.TYPE_NOT_WORN);
                         firstTimestamp = sample.getTimestamp();
                         lastTimestamp = sample.getTimestamp();
-                        currentKind = ActivityKind.TYPE_NOT_MEASURED;
-                        continue;
                     }
-                }
-                // At the switching timestamp from worn -> not-worn we add a worn session
-                if (currentKind != ActivityKind.TYPE_NOT_WORN) {
-                    if (sample.getHeartRate() < 10 && firstTimestamp != lastTimestamp) {
-                        LOG.info("Registered worn session from " + firstTimestamp + " to " + lastTimestamp);
-                        addActivity(firstTimestamp, lastTimestamp, ActivityKind.TYPE_NOT_MEASURED);
-                        firstTimestamp = sample.getTimestamp();
-                        lastTimestamp = sample.getTimestamp();
-                        currentKind = ActivityKind.TYPE_NOT_WORN;
-                        continue;
-                    }
+                    continue;
                 }
                 lastTimestamp = sample.getTimestamp();
             }
-            // After handling all activity samples, handle the remaining time until either midnight or current time
             if (firstTimestamp != lastTimestamp) {
-                lastTimestamp = (int) Math.min(dashboardData.timeTo, Calendar.getInstance().getTimeInMillis() / 1000);
-                LOG.info("Registered " + (currentKind == ActivityKind.TYPE_NOT_MEASURED ? "worn" : "not-worn") + " session from " + firstTimestamp + " to " + lastTimestamp);
-                addActivity(firstTimestamp, lastTimestamp, currentKind);
+                LOG.info("Registered worn session from " + firstTimestamp + " to " + lastTimestamp);
+                addActivity(firstTimestamp, lastTimestamp, ActivityKind.TYPE_NOT_MEASURED);
             }
         }
 
@@ -285,7 +261,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             }
             Collections.sort(allActivitySamples, (lhs, rhs) -> Integer.valueOf(lhs.getTimestamp()).compareTo(rhs.getTimestamp()));
 
-            // Determine worn and not-worn sessions from heart rate samples
+            // Determine worn sessions from heart rate samples
             calculateWornSessions(allActivitySamples);
 
             // Integrate various data from multiple devices
