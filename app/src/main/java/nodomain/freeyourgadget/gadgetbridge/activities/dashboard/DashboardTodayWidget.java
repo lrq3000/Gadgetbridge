@@ -52,6 +52,7 @@ import nodomain.freeyourgadget.gadgetbridge.R;
 import nodomain.freeyourgadget.gadgetbridge.activities.DashboardFragment;
 import nodomain.freeyourgadget.gadgetbridge.activities.charts.StepAnalysis;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
+import nodomain.freeyourgadget.gadgetbridge.entities.BaseActivitySummary;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivityKind;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
@@ -109,12 +110,14 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         l_worn.setSpan(new ForegroundColorSpan(color_worn), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableString l_activity = new SpannableString("■ " + getString(R.string.activity_type_activity));
         l_activity.setSpan(new ForegroundColorSpan(color_activity), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        SpannableString l_exercise = new SpannableString("■ " + getString(R.string.activity_type_exercise));
+        l_exercise.setSpan(new ForegroundColorSpan(color_exercise), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableString l_deep_sleep = new SpannableString("■ " + getString(R.string.activity_type_deep_sleep));
         l_deep_sleep.setSpan(new ForegroundColorSpan(color_deep_sleep), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableString l_light_sleep = new SpannableString("■ " + getString(R.string.activity_type_light_sleep));
         l_light_sleep.setSpan(new ForegroundColorSpan(color_light_sleep), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         SpannableStringBuilder legendBuilder = new SpannableStringBuilder();
-        legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_worn).append(" ").append(l_activity).append("\n").append(l_light_sleep).append(" ").append(l_deep_sleep));
+        legend.setText(legendBuilder.append(l_not_worn).append(" ").append(l_worn).append("\n").append(l_activity).append(" ").append(l_exercise).append("\n").append(l_light_sleep).append(" ").append(l_deep_sleep));
 
         legend.setVisibility(prefs.getBoolean("dashboard_widget_today_legend", true) ? View.VISIBLE : View.GONE);
 
@@ -155,25 +158,33 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 // If the current timestamp is already saved, compare the activity kinds and
                 // keep the most 'important' one
                 switch (activityTimestamps.get(i)) {
+                    case ActivityKind.TYPE_EXERCISE:
+                        break;
                     case ActivityKind.TYPE_ACTIVITY:
+                        if (activityKind == ActivityKind.TYPE_EXERCISE)
+                            activityTimestamps.put(i, activityKind);
                         break;
                     case ActivityKind.TYPE_DEEP_SLEEP:
-                        if (activityKind == ActivityKind.TYPE_ACTIVITY)
+                        if (activityKind == ActivityKind.TYPE_EXERCISE ||
+                                activityKind == ActivityKind.TYPE_ACTIVITY)
                             activityTimestamps.put(i, activityKind);
                         break;
                     case ActivityKind.TYPE_LIGHT_SLEEP:
-                        if (activityKind == ActivityKind.TYPE_ACTIVITY ||
+                        if (activityKind == ActivityKind.TYPE_EXERCISE ||
+                                activityKind == ActivityKind.TYPE_ACTIVITY ||
                                 activityKind == ActivityKind.TYPE_DEEP_SLEEP)
                             activityTimestamps.put(i, activityKind);
                         break;
                     case ActivityKind.TYPE_REM_SLEEP:
-                        if (activityKind == ActivityKind.TYPE_ACTIVITY ||
+                        if (activityKind == ActivityKind.TYPE_EXERCISE ||
+                                activityKind == ActivityKind.TYPE_ACTIVITY ||
                                 activityKind == ActivityKind.TYPE_DEEP_SLEEP ||
                                 activityKind == ActivityKind.TYPE_LIGHT_SLEEP)
                             activityTimestamps.put(i, activityKind);
                         break;
                     case ActivityKind.TYPE_SLEEP:
-                        if (activityKind == ActivityKind.TYPE_ACTIVITY ||
+                        if (activityKind == ActivityKind.TYPE_EXERCISE ||
+                                activityKind == ActivityKind.TYPE_ACTIVITY ||
                                 activityKind == ActivityKind.TYPE_DEEP_SLEEP ||
                                 activityKind == ActivityKind.TYPE_LIGHT_SLEEP ||
                                 activityKind == ActivityKind.TYPE_REM_SLEEP)
@@ -258,6 +269,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
             List<ActivitySample> allActivitySamples = new ArrayList<>();
             List<ActivitySession> stepSessions = new ArrayList<>();
+            List<BaseActivitySummary> activitySummaries = null;
             try (DBHandler dbHandler = GBApplication.acquireDB()) {
                 for (GBDevice dev : devices) {
                     if ((dashboardData.showAllDevices || dashboardData.showDeviceList.contains(dev.getAddress())) && dev.getDeviceCoordinator().supportsActivityTracking()) {
@@ -267,6 +279,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                         stepSessions.addAll(stepAnalysis.calculateStepSessions(activitySamples));
                     }
                 }
+                activitySummaries = DashboardUtils.getWorkoutSamples(dbHandler, dashboardData);
             } catch (Exception e) {
                 LOG.warn("Could not retrieve activity amounts: ", e);
             }
@@ -283,6 +296,11 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                     continue;
                 // Add to day results
                 addActivity(sample.getTimestamp(), sample.getTimestamp() + 60, sample.getKind());
+            }
+            if (activitySummaries != null) {
+                for (BaseActivitySummary baseActivitySummary : activitySummaries) {
+                    addActivity(baseActivitySummary.getStartTime().getTime() / 1000, baseActivitySummary.getEndTime().getTime() / 1000, ActivityKind.TYPE_EXERCISE);
+                }
             }
             for (ActivitySession session : stepSessions) {
                 addActivity(session.getStartTime().getTime() / 1000, session.getEndTime().getTime() / 1000, ActivityKind.TYPE_ACTIVITY);
@@ -397,6 +415,10 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                 } else if (activity.activityKind == ActivityKind.TYPE_DEEP_SLEEP) {
                     paint.setStrokeWidth(barWidth);
                     paint.setColor(color_deep_sleep);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
+                } else if (activity.activityKind == ActivityKind.TYPE_EXERCISE) {
+                    paint.setStrokeWidth(barWidth);
+                    paint.setColor(color_exercise);
                     canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
                 } else {
                     paint.setStrokeWidth(barWidth);

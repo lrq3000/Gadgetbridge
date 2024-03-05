@@ -41,6 +41,7 @@ public abstract class AbstractDashboardWidget extends Fragment {
     protected @ColorInt int color_not_worn = Color.BLACK;
     protected @ColorInt int color_worn = Color.rgb(128, 128, 128);
     protected @ColorInt int color_activity = Color.GREEN;
+    protected @ColorInt int color_exercise = Color.rgb(255, 128, 0);
     protected @ColorInt int color_deep_sleep = Color.BLUE;
     protected @ColorInt int color_light_sleep = Color.rgb(150, 150, 255);
     protected @ColorInt int color_distance = Color.BLUE;
