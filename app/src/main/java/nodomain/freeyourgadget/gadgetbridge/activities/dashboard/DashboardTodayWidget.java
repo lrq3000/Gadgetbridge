@@ -291,7 +291,7 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             float hourTextPixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, hourTextSp, requireContext().getResources().getDisplayMetrics());
             float outerCircleMargin = mode_24h ? barWidth / 2f : barWidth / 2f + hourTextPixels * 1.3f;
             float innerCircleMargin = outerCircleMargin + barWidth * 1.3f;
-            int degreeFactor = mode_24h ? 240 : 120;
+            float degreeFactor = mode_24h ? 240 : 120;
             todayBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas(todayBitmap);
             Paint paint = new Paint();
@@ -374,8 +374,8 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
                     paint.setColor(color_unknown);
                     canvas.drawArc(margin, margin, width - margin, height - margin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (activity.timeFrom - secondIndex) / degreeFactor, false, paint);
                 }
-                long start_angle = 270 + (activity.timeFrom - dashboardData.timeFrom) / degreeFactor;
-                long sweep_angle = (activity.timeTo - activity.timeFrom) / degreeFactor;
+                float start_angle = 270 + (activity.timeFrom - dashboardData.timeFrom) / degreeFactor;
+                float sweep_angle = (activity.timeTo - activity.timeFrom) / degreeFactor;
                 if (activity.activityKind == ActivityKind.TYPE_NOT_MEASURED) {
                     paint.setStrokeWidth(barWidth / 3f);
                     paint.setColor(color_worn);
