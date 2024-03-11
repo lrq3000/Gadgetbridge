@@ -49,6 +49,9 @@ import nodomain.freeyourgadget.gadgetbridge.devices.galaxy_buds.GalaxyBuds2ProDe
 import nodomain.freeyourgadget.gadgetbridge.devices.galaxy_buds.GalaxyBudsDeviceCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.galaxy_buds.GalaxyBudsLiveDeviceCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.galaxy_buds.GalaxyBudsProDeviceCoordinator;
+import nodomain.freeyourgadget.gadgetbridge.devices.garmin.instinct2s.GarminInstinct2SCoordinator;
+import nodomain.freeyourgadget.gadgetbridge.devices.garmin.venu3.GarminVenu3Coordinator;
+import nodomain.freeyourgadget.gadgetbridge.devices.garmin.vivomove.GarminVivomoveStyleCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.hplus.EXRIZUK8Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.hplus.HPlusCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.hplus.MakibesF68Coordinator;
@@ -136,9 +139,9 @@ import nodomain.freeyourgadget.gadgetbridge.devices.lenovo.watchxplus.WatchXPlus
 import nodomain.freeyourgadget.gadgetbridge.devices.liveview.LiveviewCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.makibeshr3.MakibesHR3Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.miband.MiBandCoordinator;
-import nodomain.freeyourgadget.gadgetbridge.devices.mijia_lywsd.MijiaMhoC303Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.mijia_lywsd.MijiaLywsd02Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.mijia_lywsd.MijiaLywsd03Coordinator;
+import nodomain.freeyourgadget.gadgetbridge.devices.mijia_lywsd.MijiaMhoC303Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.miscale2.MiScale2DeviceCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.no1f1.No1F1Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.nothing.Ear1Coordinator;
@@ -160,11 +163,11 @@ import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators
 import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators.SonyWF1000XM4Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators.SonyWF1000XM5Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators.SonyWFSP800NCoordinator;
-import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators.SonyWISP600NCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators.SonyWH1000XM2Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators.SonyWH1000XM3Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators.SonyWH1000XM4Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators.SonyWH1000XM5Coordinator;
+import nodomain.freeyourgadget.gadgetbridge.devices.sony.headphones.coordinators.SonyWISP600NCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.sony.wena3.SonyWena3Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.sonyswr12.SonySWR12DeviceCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.supercars.SuperCarsCoordinator;
@@ -181,20 +184,20 @@ import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.miband7pro.MiBand7Pro
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.miband8.MiBand8Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.miband8active.MiBand8ActiveCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.miband8pro.MiBand8ProCoordinator;
+import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.miwatch.MiWatchLiteCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.miwatchcolorsport.MiWatchColorSportCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.redmismartband2.RedmiSmartBand2Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.redmismartbandpro.RedmiSmartBandProCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.redmiwatch2.RedmiWatch2Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.redmiwatch2lite.RedmiWatch2LiteCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.redmiwatch3.RedmiWatch3Coordinator;
+import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.redmiwatch3active.RedmiWatch3ActiveCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.watchs1.XiaomiWatchS1Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.watchs1active.XiaomiWatchS1ActiveCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.watchs1pro.XiaomiWatchS1ProCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.watchs3.XiaomiWatchS3Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xwatch.XWatchCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.zetime.ZeTimeCoordinator;
-import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.miwatch.MiWatchLiteCoordinator;
-import nodomain.freeyourgadget.gadgetbridge.devices.xiaomi.redmiwatch3active.RedmiWatch3ActiveCoordinator;
 
 /**
  * For every supported device, a device type constant must exist.
@@ -319,6 +322,9 @@ public enum DeviceType {
     ITAG(ITagCoordinator.class),
     NUTMINI(NutCoordinator.class),
     VIVOMOVE_HR(VivomoveHrCoordinator.class),
+    GARMIN_INSTINCT_2S(GarminInstinct2SCoordinator.class),
+    GARMIN_VIVOMOVE_STYLE(GarminVivomoveStyleCoordinator.class),
+    GARMIN_VENU_3(GarminVenu3Coordinator.class),
     VIBRATISSIMO(VibratissimoCoordinator.class),
     SONY_SWR12(SonySWR12DeviceCoordinator.class),
     LIVEVIEW(LiveviewCoordinator.class),
@@ -380,7 +386,7 @@ public enum DeviceType {
 
     private DeviceCoordinator coordinator;
 
-    private Class<? extends DeviceCoordinator> coordinatorClass;
+    private final Class<? extends DeviceCoordinator> coordinatorClass;
 
     DeviceType(Class<? extends DeviceCoordinator> coordinatorClass) {
         this.coordinatorClass = coordinatorClass;
