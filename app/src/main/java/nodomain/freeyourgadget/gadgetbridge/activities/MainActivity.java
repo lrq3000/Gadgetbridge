@@ -290,7 +290,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             try {
                 cl.getMaterialLogDialog().show();
             } catch (Exception ignored) {
-                GB.toast(this, "Error showing Changelog", Toast.LENGTH_LONG, GB.ERROR);
+                GB.toast(this, getString(R.string.error_showing_changelog), Toast.LENGTH_LONG, GB.ERROR);
             }
         }
     }
@@ -355,7 +355,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         cl.getMaterialFullLogDialog().show();
                     }
                 } catch (Exception ignored) {
-                    GB.toast(getBaseContext(), "Error showing Changelog", Toast.LENGTH_LONG, GB.ERROR);
+                    GB.toast(getBaseContext(), getString(R.string.error_showing_changelog), Toast.LENGTH_LONG, GB.ERROR);
                 }
                 return false;
             case R.id.about:

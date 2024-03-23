@@ -60,7 +60,7 @@
 
         <PreferenceScreen
             android:key="pref_category_dashboard"
-            android:title="Dashboard"
+            android:title="@string/bottom_nav_dashboard"
             app:iconSpaceReserved="false">
 
             <PreferenceCategory
@@ -71,25 +71,25 @@
                     android:defaultValue="true"
                     android:key="dashboard_as_default_view"
                     android:layout="@layout/preference_checkbox"
-                    android:title="Show Dashboard first"
-                    android:summary="Show the Dashboard when Gadgetbridge starts, instead of the Devices screen"
+                    android:title="@string/pref_dashboard_first_title"
+                    android:summary="@string/pref_dashboard_first_summary"
                     app:iconSpaceReserved="false" />
                 <SwitchPreferenceCompat
                     android:defaultValue="true"
                     android:key="dashboard_cards_enabled"
                     android:layout="@layout/preference_checkbox"
-                    android:title="Show widgets on cards"
-                    android:summary="Draw cards around the widgets on the Dashboard"
+                    android:title="@string/pref_dashboard_cards_title"
+                    android:summary="@string/pref_dashboard_cards_summary"
                     app:iconSpaceReserved="false" />
             </PreferenceCategory>
 
             <PreferenceCategory
                 android:key="pref_key_dashboard_widgets"
-                android:title="Widget settings"
+                android:title="@string/pref_dashboard_widget_settings"
                 app:iconSpaceReserved="false">
                 <PreferenceScreen
                     android:key="pref_key_dashboard_today"
-                    android:title="Activity chart"
+                    android:title="@string/pref_dashboard_widget_today_title"
                     app:iconSpaceReserved="false">
                     <SwitchPreferenceCompat
                         android:defaultValue="true"
@@ -101,24 +101,24 @@
                         android:defaultValue="false"
                         android:key="dashboard_widget_today_24h"
                         android:layout="@layout/preference_checkbox"
-                        android:title="24h mode"
+                        android:title="@string/pref_dashboard_widget_today_24h"
                         app:iconSpaceReserved="false" />
                     <SwitchPreferenceCompat
                         android:defaultValue="true"
                         android:key="dashboard_widget_today_2columns"
                         android:layout="@layout/preference_checkbox"
-                        android:title="Double size"
+                        android:title="@string/pref_dashboard_widget_double_size"
                         app:iconSpaceReserved="false" />
                     <SwitchPreferenceCompat
                         android:defaultValue="true"
                         android:key="dashboard_widget_today_legend"
                         android:layout="@layout/preference_checkbox"
-                        android:title="Show legend"
+                        android:title="@string/pref_dashboard_widget_show_legend"
                         app:iconSpaceReserved="false" />
                 </PreferenceScreen>
                 <PreferenceScreen
                     android:key="pref_key_dashboard_goals"
-                    android:title="Goals chart"
+                    android:title="@string/pref_dashboard_widget_goals_chart_title"
                     app:iconSpaceReserved="false">
                     <SwitchPreferenceCompat
                         android:defaultValue="true"
@@ -130,13 +130,13 @@
                         android:defaultValue="true"
                         android:key="dashboard_widget_goals_2columns"
                         android:layout="@layout/preference_checkbox"
-                        android:title="Double size"
+                        android:title="@string/pref_dashboard_widget_double_size"
                         app:iconSpaceReserved="false" />
                     <SwitchPreferenceCompat
                         android:defaultValue="true"
                         android:key="dashboard_widget_goals_legend"
                         android:layout="@layout/preference_checkbox"
-                        android:title="Show legend"
+                        android:title="@string/pref_dashboard_widget_show_legend"
                         app:iconSpaceReserved="false" />
                 </PreferenceScreen>
                 <SwitchPreferenceCompat
@@ -167,13 +167,13 @@
 
             <PreferenceCategory
                 android:key="pref_key_dashboard_devices"
-                android:title="Devices to include"
+                android:title="@string/pref_dashboard_devices_to_include"
                 app:iconSpaceReserved="false">
                 <SwitchPreferenceCompat
                     android:defaultValue="true"
                     android:key="dashboard_devices_all"
                     android:layout="@layout/preference_checkbox"
-                    android:title="All devices"
+                    android:title="@string/pref_dashboard_all_devices"
                     android:disableDependentsState="true"
                     app:iconSpaceReserved="false" />
                 <MultiSelectListPreference
@@ -182,7 +182,7 @@
                     android:entries="@array/empty_array"
                     android:entryValues="@array/empty_array"
                     android:key="dashboard_devices_multiselect"
-                    android:title="Select devices..."
+                    android:title="@string/pref_dashboard_select_devices"
                     app:iconSpaceReserved="false" />
             </PreferenceCategory>
         </PreferenceScreen>

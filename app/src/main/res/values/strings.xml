@@ -2725,7 +2725,6 @@
     <string name="warning_missing_notification_permission">Could not post ongoing notification due to missing permission</string>
     <string name="pref_test_features_title">Features</string>
     <string name="pref_test_features_summary">Enabled features for this test device</string>
-    <string name="dashboard_settings">Dashboard settings</string>
     <string name="device_state_waiting_scan">Waiting for device scan</string>
     <string name="auto_reconnect_ble_scan_title">Reconnect by BLE scan</string>
     <string name="auto_reconnect_ble_scan_summary">Wait for device scan instead of blind connection attempts</string>
@@ -2749,4 +2748,22 @@
     <string name="devicesetting_scannable_debounce_summary">After being scanned, the device will stick as scanned and ignored for the specified amount of time</string>
     <string name="devicesetting_scannable_minimum_unseen_summary">After being scanned, the device has to be unseen for this amount of time before being registered again</string>
     <string name="devicesetting_scannable_rssi_summary">The minimum RSSI threshold for detection</string>
+    <string name="error_showing_changelog">Error showing Changelog</string>
+    <string name="activity_type_worn">Worn</string>
+    <string name="dashboard_settings">Dashboard settings</string>
+    <string name="bottom_nav_dashboard">Dashboard</string>
+    <string name="bottom_nav_devices">Devices</string>
+    <string name="pref_dashboard_first_title">Show Dashboard first</string>
+    <string name="pref_dashboard_first_summary">Show the Dashboard when Gadgetbridge starts, instead of the Devices screen</string>
+    <string name="pref_dashboard_cards_title">Show widgets on cards</string>
+    <string name="pref_dashboard_cards_summary">Draw cards around the widgets on the Dashboard</string>
+    <string name="pref_dashboard_widget_settings">Widget settings</string>
+    <string name="pref_dashboard_widget_today_title">Activity chart</string>
+    <string name="pref_dashboard_widget_today_24h">24h mode</string>
+    <string name="pref_dashboard_widget_double_size">Double size</string>
+    <string name="pref_dashboard_widget_show_legend">Show legend</string>
+    <string name="pref_dashboard_widget_goals_chart_title">Goals chart</string>
+    <string name="pref_dashboard_devices_to_include">Devices to include</string>
+    <string name="pref_dashboard_all_devices">All devices</string>
+    <string name="pref_dashboard_select_devices">Select devices...</string>
 </resources>
