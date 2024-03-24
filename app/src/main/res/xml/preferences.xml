@@ -105,19 +105,22 @@
                         android:defaultValue="false"
                         android:key="dashboard_widget_today_24h"
                         android:layout="@layout/preference_checkbox"
-                        android:title="@string/pref_dashboard_widget_today_24h"
+                        android:title="@string/pref_dashboard_widget_today_24h_title"
+                        android:summary="@string/pref_dashboard_widget_today_24h_summary"
                         app:iconSpaceReserved="false" />
                     <SwitchPreferenceCompat
                         android:defaultValue="true"
                         android:key="dashboard_widget_today_2columns"
                         android:layout="@layout/preference_checkbox"
-                        android:title="@string/pref_dashboard_widget_double_size"
+                        android:title="@string/pref_dashboard_widget_double_size_title"
+                        android:summary="@string/pref_dashboard_widget_double_size_summary"
                         app:iconSpaceReserved="false" />
                     <SwitchPreferenceCompat
                         android:defaultValue="true"
                         android:key="dashboard_widget_today_legend"
                         android:layout="@layout/preference_checkbox"
-                        android:title="@string/pref_dashboard_widget_show_legend"
+                        android:title="@string/pref_dashboard_widget_show_legend_title"
+                        android:summary="@string/pref_dashboard_widget_show_legend_summary"
                         app:iconSpaceReserved="false" />
                 </PreferenceScreen>
                 <PreferenceScreen
@@ -128,13 +131,15 @@
                         android:defaultValue="true"
                         android:key="dashboard_widget_goals_2columns"
                         android:layout="@layout/preference_checkbox"
-                        android:title="@string/pref_dashboard_widget_double_size"
+                        android:title="@string/pref_dashboard_widget_double_size_title"
+                        android:summary="@string/pref_dashboard_widget_double_size_summary"
                         app:iconSpaceReserved="false" />
                     <SwitchPreferenceCompat
                         android:defaultValue="true"
                         android:key="dashboard_widget_goals_legend"
                         android:layout="@layout/preference_checkbox"
-                        android:title="@string/pref_dashboard_widget_show_legend"
+                        android:title="@string/pref_dashboard_widget_show_legend_title"
+                        android:summary="@string/pref_dashboard_widget_show_legend_summary"
                         app:iconSpaceReserved="false" />
                 </PreferenceScreen>
             </PreferenceCategory>
@@ -147,7 +152,8 @@
                     android:defaultValue="true"
                     android:key="dashboard_devices_all"
                     android:layout="@layout/preference_checkbox"
-                    android:title="@string/pref_dashboard_all_devices"
+                    android:title="@string/pref_dashboard_all_devices_title"
+                    android:summary="@string/pref_dashboard_all_devices_summary"
                     android:disableDependentsState="true"
                     app:iconSpaceReserved="false" />
                 <MultiSelectListPreference
@@ -156,7 +162,8 @@
                     android:entries="@array/empty_array"
                     android:entryValues="@array/empty_array"
                     android:key="dashboard_devices_multiselect"
-                    android:title="@string/pref_dashboard_select_devices"
+                    android:title="@string/pref_dashboard_select_devices_title"
+                    android:summary="@string/pref_dashboard_select_devices_summary"
                     app:iconSpaceReserved="false" />
             </PreferenceCategory>
         </PreferenceScreen>
