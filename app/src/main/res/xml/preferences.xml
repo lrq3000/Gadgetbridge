@@ -81,6 +81,16 @@
                     android:title="@string/pref_dashboard_cards_title"
                     android:summary="@string/pref_dashboard_cards_summary"
                     app:iconSpaceReserved="false" />
+                <com.mobeta.android.dslv.DragSortListPreference
+                    android:defaultValue="@array/pref_dashboard_widgets_order_values"
+                    android:dialogTitle="@string/menuitem_widgets"
+                    android:entries="@array/pref_dashboard_widgets_order"
+                    android:entryValues="@array/pref_dashboard_widgets_order_values"
+                    android:key="pref_dashboard_widgets_order"
+                    android:persistent="true"
+                    android:summary="@string/pref_dashboard_widgets_order_summary"
+                    android:title="@string/menuitem_widgets"
+                    app:iconSpaceReserved="false" />
             </PreferenceCategory>
 
             <PreferenceCategory
@@ -91,12 +101,6 @@
                     android:key="pref_key_dashboard_today"
                     android:title="@string/pref_dashboard_widget_today_title"
                     app:iconSpaceReserved="false">
-                    <SwitchPreferenceCompat
-                        android:defaultValue="true"
-                        android:key="dashboard_widget_today_enabled"
-                        android:layout="@layout/preference_checkbox"
-                        android:title="@string/function_enabled"
-                        app:iconSpaceReserved="false" />
                     <SwitchPreferenceCompat
                         android:defaultValue="false"
                         android:key="dashboard_widget_today_24h"
@@ -122,12 +126,6 @@
                     app:iconSpaceReserved="false">
                     <SwitchPreferenceCompat
                         android:defaultValue="true"
-                        android:key="dashboard_widget_goals_enabled"
-                        android:layout="@layout/preference_checkbox"
-                        android:title="@string/function_enabled"
-                        app:iconSpaceReserved="false" />
-                    <SwitchPreferenceCompat
-                        android:defaultValue="true"
                         android:key="dashboard_widget_goals_2columns"
                         android:layout="@layout/preference_checkbox"
                         android:title="@string/pref_dashboard_widget_double_size"
@@ -139,30 +137,6 @@
                         android:title="@string/pref_dashboard_widget_show_legend"
                         app:iconSpaceReserved="false" />
                 </PreferenceScreen>
-                <SwitchPreferenceCompat
-                    android:defaultValue="true"
-                    android:key="dashboard_widget_steps_enabled"
-                    android:layout="@layout/preference_checkbox"
-                    android:title="@string/steps"
-                    app:iconSpaceReserved="false" />
-                <SwitchPreferenceCompat
-                    android:defaultValue="true"
-                    android:key="dashboard_widget_distance_enabled"
-                    android:layout="@layout/preference_checkbox"
-                    android:title="@string/distance"
-                    app:iconSpaceReserved="false" />
-                <SwitchPreferenceCompat
-                    android:defaultValue="true"
-                    android:key="dashboard_widget_active_time_enabled"
-                    android:layout="@layout/preference_checkbox"
-                    android:title="@string/active_time"
-                    app:iconSpaceReserved="false" />
-                <SwitchPreferenceCompat
-                    android:defaultValue="true"
-                    android:key="dashboard_widget_sleep_enabled"
-                    android:layout="@layout/preference_checkbox"
-                    android:title="@string/menuitem_sleep"
-                    app:iconSpaceReserved="false" />
             </PreferenceCategory>
 
             <PreferenceCategory

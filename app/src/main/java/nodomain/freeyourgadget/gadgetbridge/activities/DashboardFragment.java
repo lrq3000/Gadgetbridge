@@ -41,6 +41,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.google.android.material.card.MaterialCardView;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
@@ -229,6 +230,8 @@ public class DashboardFragment extends Fragment {
         day.set(Calendar.SECOND, 59);
         dashboardData.clear();
         Prefs prefs = GBApplication.getPrefs();
+        String widgetsOrderPref = prefs.getString("pref_dashboard_widgets_order", "");
+        List<String> widgetsOrder = Arrays.asList(widgetsOrderPref.split(","));
         dashboardData.showAllDevices = prefs.getBoolean("dashboard_devices_all", true);
         dashboardData.showDeviceList = prefs.getStringSet("dashboard_devices_multiselect", new HashSet<>());
         dashboardData.timeTo = (int) (day.getTimeInMillis() / 1000);
@@ -245,52 +248,56 @@ public class DashboardFragment extends Fragment {
 
         boolean cardsEnabled = prefs.getBoolean("dashboard_cards_enabled", true);
 
-        if (prefs.getBoolean("dashboard_widget_today_enabled", true)) {
-            if (todayWidget == null) {
-                todayWidget = DashboardTodayWidget.newInstance(dashboardData);
-                createWidget(todayWidget, cardsEnabled, prefs.getBoolean("dashboard_widget_today_2columns", true) ? 2 : 1);
-            } else {
-                todayWidget.update();
-            }
-        }
-        if (prefs.getBoolean("dashboard_widget_goals_enabled", true)) {
-            if (goalsWidget == null) {
-                goalsWidget = DashboardGoalsWidget.newInstance(dashboardData);
-                createWidget(goalsWidget, cardsEnabled, prefs.getBoolean("dashboard_widget_goals_2columns", true) ? 2 : 1);
-            } else {
-                goalsWidget.update();
-            }
-        }
-        if (prefs.getBoolean("dashboard_widget_steps_enabled", true)) {
-            if (stepsWidget == null) {
-                stepsWidget = DashboardStepsWidget.newInstance(dashboardData);
-                createWidget(stepsWidget, cardsEnabled, 1);
-            } else {
-                stepsWidget.update();
-            }
-        }
-        if (prefs.getBoolean("dashboard_widget_distance_enabled", true)) {
-            if (distanceWidget == null) {
-                distanceWidget = DashboardDistanceWidget.newInstance(dashboardData);
-                createWidget(distanceWidget, cardsEnabled, 1);
-            } else {
-                distanceWidget.update();
-            }
-        }
-        if (prefs.getBoolean("dashboard_widget_active_time_enabled", true)) {
-            if (activeTimeWidget == null) {
-                activeTimeWidget = DashboardActiveTimeWidget.newInstance(dashboardData);
-                createWidget(activeTimeWidget, cardsEnabled, 1);
-            } else {
-                activeTimeWidget.update();
-            }
-        }
-        if (prefs.getBoolean("dashboard_widget_sleep_enabled", true)) {
-            if (sleepWidget == null) {
-                sleepWidget = DashboardSleepWidget.newInstance(dashboardData);
-                createWidget(sleepWidget, cardsEnabled, 1);
-            } else {
-                sleepWidget.update();
+        for (String widgetName : widgetsOrder) {
+            switch (widgetName) {
+                case "today":
+                    if (todayWidget == null) {
+                        todayWidget = DashboardTodayWidget.newInstance(dashboardData);
+                        createWidget(todayWidget, cardsEnabled, prefs.getBoolean("dashboard_widget_today_2columns", true) ? 2 : 1);
+                    } else {
+                        todayWidget.update();
+                    }
+                    break;
+                case "goals":
+                    if (goalsWidget == null) {
+                        goalsWidget = DashboardGoalsWidget.newInstance(dashboardData);
+                        createWidget(goalsWidget, cardsEnabled, prefs.getBoolean("dashboard_widget_goals_2columns", true) ? 2 : 1);
+                    } else {
+                        goalsWidget.update();
+                    }
+                    break;
+                case "steps":
+                    if (stepsWidget == null) {
+                        stepsWidget = DashboardStepsWidget.newInstance(dashboardData);
+                        createWidget(stepsWidget, cardsEnabled, 1);
+                    } else {
+                        stepsWidget.update();
+                    }
+                    break;
+                case "distance":
+                    if (distanceWidget == null) {
+                        distanceWidget = DashboardDistanceWidget.newInstance(dashboardData);
+                        createWidget(distanceWidget, cardsEnabled, 1);
+                    } else {
+                        distanceWidget.update();
+                    }
+                    break;
+                case "activetime":
+                    if (activeTimeWidget == null) {
+                        activeTimeWidget = DashboardActiveTimeWidget.newInstance(dashboardData);
+                        createWidget(activeTimeWidget, cardsEnabled, 1);
+                    } else {
+                        activeTimeWidget.update();
+                    }
+                    break;
+                case "sleep":
+                    if (sleepWidget == null) {
+                        sleepWidget = DashboardSleepWidget.newInstance(dashboardData);
+                        createWidget(sleepWidget, cardsEnabled, 1);
+                    } else {
+                        sleepWidget.update();
+                    }
+                    break;
             }
         }
     }
