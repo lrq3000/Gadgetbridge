@@ -230,7 +230,8 @@ public class DashboardFragment extends Fragment {
         day.set(Calendar.SECOND, 59);
         dashboardData.clear();
         Prefs prefs = GBApplication.getPrefs();
-        String widgetsOrderPref = prefs.getString("pref_dashboard_widgets_order", "");
+        String defaultWidgetsOrder = String.join(",", getResources().getStringArray(R.array.pref_dashboard_widgets_order_values));
+        String widgetsOrderPref = prefs.getString("pref_dashboard_widgets_order", defaultWidgetsOrder);
         List<String> widgetsOrder = Arrays.asList(widgetsOrderPref.split(","));
         dashboardData.showAllDevices = prefs.getBoolean("dashboard_devices_all", true);
         dashboardData.showDeviceList = prefs.getStringSet("dashboard_devices_multiselect", new HashSet<>());
