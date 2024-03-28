@@ -2772,4 +2772,6 @@
     <string name="pref_dashboard_widget_show_legend_summary">Show a legend below the widget explaining the colors</string>
     <string name="pref_dashboard_all_devices_summary">Combine activity data from all added devices for the totals on the dashboard</string>
     <string name="pref_dashboard_select_devices_summary">Combine activity data from specific devices for the totals on the dashboard</string>
+    <string name="pref_dashboard_widget_today_hr_interval_title">Heart rate interval</string>
+    <string name="pref_dashboard_widget_today_hr_interval_summary">The amount of minutes the chart shows \'worn\' after each successful heart rate measurement</string>
 </resources>

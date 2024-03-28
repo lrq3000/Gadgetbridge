@@ -234,6 +234,7 @@ public class DashboardFragment extends Fragment {
         List<String> widgetsOrder = Arrays.asList(widgetsOrderPref.split(","));
         dashboardData.showAllDevices = prefs.getBoolean("dashboard_devices_all", true);
         dashboardData.showDeviceList = prefs.getStringSet("dashboard_devices_multiselect", new HashSet<>());
+        dashboardData.hrIntervalSecs = prefs.getInt("dashboard_widget_today_hr_interval", 1) * 60;
         dashboardData.timeTo = (int) (day.getTimeInMillis() / 1000);
         dashboardData.timeFrom = DateTimeUtils.shiftDays(dashboardData.timeTo, -1);
 
@@ -344,6 +345,7 @@ public class DashboardFragment extends Fragment {
     public static class DashboardData implements Serializable {
         public boolean showAllDevices;
         public Set<String> showDeviceList;
+        public int hrIntervalSecs;
         public int timeFrom;
         public int timeTo;
         private int stepsTotal;

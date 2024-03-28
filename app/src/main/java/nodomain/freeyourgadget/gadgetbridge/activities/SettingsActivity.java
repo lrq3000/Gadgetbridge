@@ -108,6 +108,7 @@ public class SettingsActivity extends AbstractSettingsActivityV2 {
         public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
             setPreferencesFromResource(R.xml.preferences, rootKey);
 
+            setInputTypeFor("dashboard_widget_today_hr_interval", InputType.TYPE_CLASS_NUMBER);
             setInputTypeFor("rtl_max_line_length", InputType.TYPE_CLASS_NUMBER);
             setInputTypeFor("location_latitude", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
             setInputTypeFor("location_longitude", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
