@@ -16,9 +16,9 @@
     </fragment>
     <fragment
         android:id="@+id/bottom_nav_devices"
-        android:name="nodomain.freeyourgadget.gadgetbridge.activities.ControlCenterv2"
+        android:name="nodomain.freeyourgadget.gadgetbridge.activities.DevicesFragment"
         android:label="fragment_devices"
-        tools:layout="@layout/fragment_controlcenterv2">
+        tools:layout="@layout/fragment_devices">
         <action
             android:id="@+id/devices_to_dashboard"
             app:destination="@id/bottom_nav_dashboard" />

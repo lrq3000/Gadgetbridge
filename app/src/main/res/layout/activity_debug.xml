@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="nodomain.freeyourgadget.gadgetbridge.activities.MainActivity">
+    tools:context="nodomain.freeyourgadget.gadgetbridge.activities.ControlCenterv2">
 
     <ScrollView
         android:id="@+id/scrollView"
