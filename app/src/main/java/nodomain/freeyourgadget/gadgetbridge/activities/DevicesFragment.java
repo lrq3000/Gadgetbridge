@@ -115,7 +115,9 @@ public class DevicesFragment extends Fragment {
         deviceListView.post(new Runnable() {
             @Override
             public void run() {
-                createRefreshTask("get activity data", getActivity().getApplication()).execute();
+                if (getContext() != null) {
+                    createRefreshTask("get activity data", getContext()).execute();
+                }
             }
         });
 
@@ -201,7 +203,7 @@ public class DevicesFragment extends Fragment {
 
     @Override
     public void onDestroy() {
-        unregisterForContextMenu(deviceListView);
+        if (deviceListView != null) unregisterForContextMenu(deviceListView);
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(mReceiver);
         super.onDestroy();
     }

@@ -40,9 +40,14 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.card.MaterialCardView;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
@@ -67,7 +72,8 @@ import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 public class DashboardFragment extends Fragment {
-    private boolean isVisible = false;
+    private static final Logger LOG = LoggerFactory.getLogger(DashboardFragment.class);
+
     private Calendar day = GregorianCalendar.getInstance();
     private TextView textViewDate;
     private TextView arrowLeft;
@@ -142,16 +148,17 @@ public class DashboardFragment extends Fragment {
             }
         });
 
+        if (savedInstanceState != null && savedInstanceState.containsKey("dashboard_data") && dashboardData.isEmpty()) {
+            dashboardData = (DashboardData) savedInstanceState.getSerializable("dashboard_data");
+        }
+
+        // Make sure the widget fragments are (re)instantiated when drawing the dashboard
         todayWidget = null;
         goalsWidget = null;
         stepsWidget = null;
         distanceWidget = null;
         activeTimeWidget = null;
         sleepWidget = null;
-
-        // Only load widgets here if the Dashboard is visible.
-        // This prevents a hard crash when replacing the fragment in createWidget() via a FragmentManager.
-        if (isVisible) refresh();
 
         IntentFilter filterLocal = new IntentFilter();
         filterLocal.addAction(GBDevice.ACTION_DEVICE_CHANGED);
@@ -163,7 +170,8 @@ public class DashboardFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        fullRefresh();
+        draw();
+        if (dashboardData.isEmpty() || todayWidget == null) refresh();
     }
 
     @Override
@@ -173,13 +181,9 @@ public class DashboardFragment extends Fragment {
     }
 
     @Override
-    public void setUserVisibleHint(boolean isVisibleToUser) {
-        super.setUserVisibleHint(isVisibleToUser);
-        if (isVisibleToUser) {
-            isVisible = true;
-        } else {
-            isVisible = false;
-        }
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putSerializable("dashboard_data", dashboardData);
     }
 
     @Override
@@ -207,9 +211,9 @@ public class DashboardFragment extends Fragment {
             long timeMillis = data.getLongExtra(DashboardCalendarActivity.EXTRA_TIMESTAMP, 0);
             if (timeMillis != 0) {
                 day.setTimeInMillis(timeMillis);
+                fullRefresh();
             }
         }
-        fullRefresh();
     }
 
     private void fullRefresh() {
@@ -230,14 +234,19 @@ public class DashboardFragment extends Fragment {
         day.set(Calendar.SECOND, 59);
         dashboardData.clear();
         Prefs prefs = GBApplication.getPrefs();
-        String defaultWidgetsOrder = String.join(",", getResources().getStringArray(R.array.pref_dashboard_widgets_order_values));
-        String widgetsOrderPref = prefs.getString("pref_dashboard_widgets_order", defaultWidgetsOrder);
-        List<String> widgetsOrder = Arrays.asList(widgetsOrderPref.split(","));
         dashboardData.showAllDevices = prefs.getBoolean("dashboard_devices_all", true);
         dashboardData.showDeviceList = prefs.getStringSet("dashboard_devices_multiselect", new HashSet<>());
         dashboardData.hrIntervalSecs = prefs.getInt("dashboard_widget_today_hr_interval", 1) * 60;
         dashboardData.timeTo = (int) (day.getTimeInMillis() / 1000);
         dashboardData.timeFrom = DateTimeUtils.shiftDays(dashboardData.timeTo, -1);
+        draw();
+    }
+
+    private void draw() {
+        Prefs prefs = GBApplication.getPrefs();
+        String defaultWidgetsOrder = String.join(",", getResources().getStringArray(R.array.pref_dashboard_widgets_order_values));
+        String widgetsOrderPref = prefs.getString("pref_dashboard_widgets_order", defaultWidgetsOrder);
+        List<String> widgetsOrder = Arrays.asList(widgetsOrderPref.split(","));
 
         Calendar today = GregorianCalendar.getInstance();
         if (DateTimeUtils.isSameDay(today, day)) {
@@ -349,6 +358,7 @@ public class DashboardFragment extends Fragment {
         public int hrIntervalSecs;
         public int timeFrom;
         public int timeTo;
+        public final List<GeneralizedActivity> generalizedActivities = Collections.synchronizedList(new ArrayList<>());
         private int stepsTotal;
         private float stepsGoalFactor;
         private long sleepTotalMinutes;
@@ -367,6 +377,19 @@ public class DashboardFragment extends Fragment {
             distanceGoalFactor = 0;
             activeMinutesTotal = 0;
             activeMinutesGoalFactor = 0;
+            generalizedActivities.clear();
+        }
+
+        public boolean isEmpty() {
+            return (stepsTotal == 0 &&
+                    stepsGoalFactor == 0 &&
+                    sleepTotalMinutes == 0 &&
+                    sleepGoalFactor == 0 &&
+                    distanceTotalMeters == 0 &&
+                    distanceGoalFactor == 0 &&
+                    activeMinutesTotal == 0 &&
+                    activeMinutesGoalFactor == 0 &&
+                    generalizedActivities.isEmpty());
         }
 
         public synchronized int getStepsTotal() {
@@ -415,6 +438,24 @@ public class DashboardFragment extends Fragment {
             if (sleepGoalFactor == 0)
                 sleepGoalFactor = DashboardUtils.getSleepMinutesGoalFactor(this);
             return sleepGoalFactor;
+        }
+
+        public static class GeneralizedActivity implements Serializable {
+            public int activityKind;
+            public long timeFrom;
+            public long timeTo;
+
+            public GeneralizedActivity(int activityKind, long timeFrom, long timeTo) {
+                this.activityKind = activityKind;
+                this.timeFrom = timeFrom;
+                this.timeTo = timeTo;
+            }
+
+            @NonNull
+            @Override
+            public String toString() {
+                return "Generalized activity: timeFrom=" + timeFrom + ", timeTo=" + timeTo + ", activityKind=" + activityKind + ", calculated duration: " + (timeTo - timeFrom) + " seconds";
+            }
         }
     }
 }
