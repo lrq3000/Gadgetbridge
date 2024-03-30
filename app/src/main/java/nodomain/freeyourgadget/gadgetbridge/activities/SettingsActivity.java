@@ -413,6 +413,76 @@ public class SettingsActivity extends AbstractSettingsActivityV2 {
                 dashboardDevices.setEntryValues(deviceMACs.toArray(new String[0]));
                 dashboardDevices.setEntries(deviceNames.toArray(new String[0]));
             }
+            pref = findPreference("dashboard_cards_enabled");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
+            pref = findPreference("pref_dashboard_widgets_order");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
+            pref = findPreference("dashboard_widget_today_24h");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
+            pref = findPreference("dashboard_widget_today_2columns");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
+            pref = findPreference("dashboard_widget_today_legend");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
+            pref = findPreference("dashboard_widget_today_hr_interval");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
+            pref = findPreference("dashboard_widget_goals_2columns");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
+            pref = findPreference("dashboard_widget_goals_legend");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
+            pref = findPreference("dashboard_devices_all");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
+            pref = findPreference("dashboard_devices_multiselect");
+            if (pref != null) {
+                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                    sendDashboardConfigChangedIntent();
+                    return true;
+                });
+            }
 
             final Preference theme = findPreference("pref_key_theme");
             final Preference amoled_black = findPreference("pref_key_theme_amoled_black");
@@ -606,6 +676,15 @@ public class SettingsActivity extends AbstractSettingsActivityV2 {
         private void sendThemeChangeIntent() {
             Intent intent = new Intent();
             intent.setAction(GBApplication.ACTION_THEME_CHANGE);
+            LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(intent);
+        }
+
+        /**
+         * Signal dashboard that its config has changed
+         */
+        private void sendDashboardConfigChangedIntent() {
+            Intent intent = new Intent();
+            intent.setAction(DashboardFragment.ACTION_CONFIG_CHANGE);
             LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(intent);
         }
     }

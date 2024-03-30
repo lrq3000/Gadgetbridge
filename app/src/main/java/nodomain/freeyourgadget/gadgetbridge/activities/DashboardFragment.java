@@ -87,16 +87,25 @@ public class DashboardFragment extends Fragment {
     private DashboardActiveTimeWidget activeTimeWidget;
     private DashboardSleepWidget sleepWidget;
     private DashboardData dashboardData = new DashboardData();
+    private boolean isConfigChanged = false;
+
+    public static final String ACTION_CONFIG_CHANGE = "nodomain.freeyourgadget.gadgetbridge.activities.dashboardfragment.action.config_change";
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if (action != null && action.equals(GBDevice.ACTION_DEVICE_CHANGED)) {
-                GBDevice dev = intent.getParcelableExtra(GBDevice.EXTRA_DEVICE);
-                if (dev != null && !dev.isBusy()) {
-                    refresh();
-                }
+            if (action == null) return;
+            switch (action) {
+                case GBDevice.ACTION_DEVICE_CHANGED:
+                    GBDevice dev = intent.getParcelableExtra(GBDevice.EXTRA_DEVICE);
+                    if (dev != null && !dev.isBusy()) {
+                        refresh();
+                    }
+                    break;
+                case ACTION_CONFIG_CHANGE:
+                    isConfigChanged = true;
+                    break;
             }
         }
     };
@@ -162,6 +171,7 @@ public class DashboardFragment extends Fragment {
 
         IntentFilter filterLocal = new IntentFilter();
         filterLocal.addAction(GBDevice.ACTION_DEVICE_CHANGED);
+        filterLocal.addAction(ACTION_CONFIG_CHANGE);
         LocalBroadcastManager.getInstance(requireContext()).registerReceiver(mReceiver, filterLocal);
 
         return dashboardView;
@@ -171,7 +181,12 @@ public class DashboardFragment extends Fragment {
     public void onResume() {
         super.onResume();
         draw();
-        if (dashboardData.isEmpty() || todayWidget == null) refresh();
+        if (isConfigChanged) {
+            isConfigChanged = false;
+            fullRefresh();
+        } else if (dashboardData.isEmpty() || todayWidget == null) {
+            refresh();
+        }
     }
 
     @Override
