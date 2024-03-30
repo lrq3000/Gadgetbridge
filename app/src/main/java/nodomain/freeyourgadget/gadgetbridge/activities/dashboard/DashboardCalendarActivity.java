@@ -242,9 +242,9 @@ public class DashboardCalendarActivity extends AbstractGBActivity {
                 backgroundDrawable.setColor(dayColor);
                 if (DateTimeUtils.isSameDay(day, currentDay)) {
                     GradientDrawable borderDrawable = new GradientDrawable();
-                    borderDrawable.setShape(GradientDrawable.RECTANGLE);
+                    borderDrawable.setShape(GradientDrawable.OVAL);
                     borderDrawable.setColor(Color.TRANSPARENT);
-                    borderDrawable.setStroke(2, GBApplication.getTextColor(getApplicationContext()));
+                    borderDrawable.setStroke(5, GBApplication.getTextColor(getApplicationContext()));
                     LayerDrawable layerDrawable = new LayerDrawable(new Drawable[]{backgroundDrawable, borderDrawable});
                     text.setBackground(layerDrawable);
                 } else {
