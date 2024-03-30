@@ -57,6 +57,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -413,75 +414,26 @@ public class SettingsActivity extends AbstractSettingsActivityV2 {
                 dashboardDevices.setEntryValues(deviceMACs.toArray(new String[0]));
                 dashboardDevices.setEntries(deviceNames.toArray(new String[0]));
             }
-            pref = findPreference("dashboard_cards_enabled");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
-            }
-            pref = findPreference("pref_dashboard_widgets_order");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
-            }
-            pref = findPreference("dashboard_widget_today_24h");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
-            }
-            pref = findPreference("dashboard_widget_today_2columns");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
-            }
-            pref = findPreference("dashboard_widget_today_legend");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
-            }
-            pref = findPreference("dashboard_widget_today_hr_interval");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
-            }
-            pref = findPreference("dashboard_widget_goals_2columns");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
-            }
-            pref = findPreference("dashboard_widget_goals_legend");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
-            }
-            pref = findPreference("dashboard_devices_all");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
-            }
-            pref = findPreference("dashboard_devices_multiselect");
-            if (pref != null) {
-                pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                    sendDashboardConfigChangedIntent();
-                    return true;
-                });
+            List<String> dashboardPrefs = Arrays.asList(
+                    "dashboard_cards_enabled",
+                    "pref_dashboard_widgets_order",
+                    "dashboard_widget_today_24h",
+                    "dashboard_widget_today_2columns",
+                    "dashboard_widget_today_legend",
+                    "dashboard_widget_today_hr_interval",
+                    "dashboard_widget_goals_2columns",
+                    "dashboard_widget_goals_legend",
+                    "dashboard_devices_all",
+                    "dashboard_devices_multiselect"
+            );
+            for (String dashboardPref : dashboardPrefs) {
+                pref = findPreference(dashboardPref);
+                if (pref != null) {
+                    pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
+                        sendDashboardConfigChangedIntent();
+                        return true;
+                    });
+                }
             }
 
             final Preference theme = findPreference("pref_key_theme");
