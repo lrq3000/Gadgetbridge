@@ -214,53 +214,55 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
         // Draw generalized activities on circular chart
         long secondIndex = dashboardData.timeFrom;
         long currentTime = Calendar.getInstance().getTimeInMillis() / 1000;
-        for (DashboardFragment.DashboardData.GeneralizedActivity activity : dashboardData.generalizedActivities) {
-            // Determine margin depending on 24h/12h mode
-            float margin = (mode_24h || activity.timeFrom >= midDaySecond) ? outerCircleMargin : innerCircleMargin;
-            // Draw inactive slices
-            if (!mode_24h && secondIndex < midDaySecond && activity.timeFrom >= midDaySecond) {
-                paint.setStrokeWidth(barWidth / 3f);
-                paint.setColor(color_unknown);
-                canvas.drawArc(innerCircleMargin, innerCircleMargin, width - innerCircleMargin, height - innerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (midDaySecond - secondIndex) / degreeFactor, false, paint);
-                secondIndex = midDaySecond;
+        synchronized (dashboardData.generalizedActivities) {
+            for (DashboardFragment.DashboardData.GeneralizedActivity activity : dashboardData.generalizedActivities) {
+                // Determine margin depending on 24h/12h mode
+                float margin = (mode_24h || activity.timeFrom >= midDaySecond) ? outerCircleMargin : innerCircleMargin;
+                // Draw inactive slices
+                if (!mode_24h && secondIndex < midDaySecond && activity.timeFrom >= midDaySecond) {
+                    paint.setStrokeWidth(barWidth / 3f);
+                    paint.setColor(color_unknown);
+                    canvas.drawArc(innerCircleMargin, innerCircleMargin, width - innerCircleMargin, height - innerCircleMargin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (midDaySecond - secondIndex) / degreeFactor, false, paint);
+                    secondIndex = midDaySecond;
+                }
+                if (activity.timeFrom > secondIndex) {
+                    paint.setStrokeWidth(barWidth / 3f);
+                    paint.setColor(color_unknown);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (activity.timeFrom - secondIndex) / degreeFactor, false, paint);
+                }
+                float start_angle = 270 + (activity.timeFrom - dashboardData.timeFrom) / degreeFactor;
+                float sweep_angle = (activity.timeTo - activity.timeFrom) / degreeFactor;
+                if (activity.activityKind == ActivityKind.TYPE_NOT_MEASURED) {
+                    paint.setStrokeWidth(barWidth / 3f);
+                    paint.setColor(color_worn);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
+                } else if (activity.activityKind == ActivityKind.TYPE_NOT_WORN) {
+                    paint.setStrokeWidth(barWidth / 3f);
+                    paint.setColor(color_not_worn);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
+                } else if (activity.activityKind == ActivityKind.TYPE_LIGHT_SLEEP || activity.activityKind == ActivityKind.TYPE_SLEEP) {
+                    paint.setStrokeWidth(barWidth);
+                    paint.setColor(color_light_sleep);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
+                } else if (activity.activityKind == ActivityKind.TYPE_REM_SLEEP) {
+                    paint.setStrokeWidth(barWidth);
+                    paint.setColor(color_rem_sleep);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
+                } else if (activity.activityKind == ActivityKind.TYPE_DEEP_SLEEP) {
+                    paint.setStrokeWidth(barWidth);
+                    paint.setColor(color_deep_sleep);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
+                } else if (activity.activityKind == ActivityKind.TYPE_EXERCISE) {
+                    paint.setStrokeWidth(barWidth);
+                    paint.setColor(color_exercise);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
+                } else {
+                    paint.setStrokeWidth(barWidth);
+                    paint.setColor(color_activity);
+                    canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
+                }
+                secondIndex = activity.timeTo;
             }
-            if (activity.timeFrom > secondIndex) {
-                paint.setStrokeWidth(barWidth / 3f);
-                paint.setColor(color_unknown);
-                canvas.drawArc(margin, margin, width - margin, height - margin, 270 + (secondIndex - dashboardData.timeFrom) / degreeFactor, (activity.timeFrom - secondIndex) / degreeFactor, false, paint);
-            }
-            float start_angle = 270 + (activity.timeFrom - dashboardData.timeFrom) / degreeFactor;
-            float sweep_angle = (activity.timeTo - activity.timeFrom) / degreeFactor;
-            if (activity.activityKind == ActivityKind.TYPE_NOT_MEASURED) {
-                paint.setStrokeWidth(barWidth / 3f);
-                paint.setColor(color_worn);
-                canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
-            } else if (activity.activityKind == ActivityKind.TYPE_NOT_WORN) {
-                paint.setStrokeWidth(barWidth / 3f);
-                paint.setColor(color_not_worn);
-                canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
-            } else if (activity.activityKind == ActivityKind.TYPE_LIGHT_SLEEP || activity.activityKind == ActivityKind.TYPE_SLEEP) {
-                paint.setStrokeWidth(barWidth);
-                paint.setColor(color_light_sleep);
-                canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
-            } else if (activity.activityKind == ActivityKind.TYPE_REM_SLEEP) {
-                paint.setStrokeWidth(barWidth);
-                paint.setColor(color_rem_sleep);
-                canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
-            } else if (activity.activityKind == ActivityKind.TYPE_DEEP_SLEEP) {
-                paint.setStrokeWidth(barWidth);
-                paint.setColor(color_deep_sleep);
-                canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
-            } else if (activity.activityKind == ActivityKind.TYPE_EXERCISE) {
-                paint.setStrokeWidth(barWidth);
-                paint.setColor(color_exercise);
-                canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
-            } else {
-                paint.setStrokeWidth(barWidth);
-                paint.setColor(color_activity);
-                canvas.drawArc(margin, margin, width - margin, height - margin, start_angle, sweep_angle, false, paint);
-            }
-            secondIndex = activity.timeTo;
         }
         // Fill remaining time until current time in 12h mode before midday
         if (!mode_24h && currentTime < midDaySecond) {
