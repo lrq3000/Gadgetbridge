@@ -2753,10 +2753,10 @@
     <string name="dashboard_settings">Dashboard settings</string>
     <string name="bottom_nav_dashboard">Dashboard</string>
     <string name="bottom_nav_devices">Devices</string>
-    <string name="pref_dashboard_first_title">Show Dashboard first</string>
-    <string name="pref_dashboard_first_summary">Show the Dashboard when Gadgetbridge starts, instead of the Devices screen</string>
+    <string name="pref_dashboard_first_title">Show dashboard first</string>
+    <string name="pref_dashboard_first_summary">Show the dashboard when Gadgetbridge starts, instead of the devices screen</string>
     <string name="pref_dashboard_cards_title">Show widgets on cards</string>
-    <string name="pref_dashboard_cards_summary">Draw cards around the widgets on the Dashboard</string>
+    <string name="pref_dashboard_cards_summary">Draw cards around the widgets on the dashboard</string>
     <string name="pref_dashboard_widget_settings">Widget settings</string>
     <string name="pref_dashboard_widget_today_title">Activity chart</string>
     <string name="pref_dashboard_widget_today_24h_title">24h mode</string>

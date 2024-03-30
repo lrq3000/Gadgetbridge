@@ -166,7 +166,7 @@
                     app:iconSpaceReserved="false" />
                 <MultiSelectListPreference
                     android:dependency="dashboard_devices_all"
-                    android:dialogTitle="Select devices"
+                    android:dialogTitle="@string/pref_dashboard_select_devices_title"
                     android:entries="@array/empty_array"
                     android:entryValues="@array/empty_array"
                     android:key="dashboard_devices_multiselect"
