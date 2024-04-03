@@ -109,7 +109,6 @@ public class SettingsActivity extends AbstractSettingsActivityV2 {
         public void onCreatePreferences(final Bundle savedInstanceState, final String rootKey) {
             setPreferencesFromResource(R.xml.preferences, rootKey);
 
-            setInputTypeFor("dashboard_widget_today_hr_interval", InputType.TYPE_CLASS_NUMBER);
             setInputTypeFor("rtl_max_line_length", InputType.TYPE_CLASS_NUMBER);
             setInputTypeFor("location_latitude", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
             setInputTypeFor("location_longitude", InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
@@ -402,38 +401,13 @@ public class SettingsActivity extends AbstractSettingsActivityV2 {
                 audioPlayer.setDefaultValue(newValues[0]);
             }
 
-            final MultiSelectListPreference dashboardDevices = findPreference("dashboard_devices_multiselect");
-            if (dashboardDevices != null) {
-                List<GBDevice> devices = GBApplication.app().getDeviceManager().getDevices();
-                List<String> deviceMACs = new ArrayList<>();
-                List<String> deviceNames = new ArrayList<>();
-                for (GBDevice dev : devices) {
-                    deviceMACs.add(dev.getAddress());
-                    deviceNames.add(dev.getAliasOrName());
-                }
-                dashboardDevices.setEntryValues(deviceMACs.toArray(new String[0]));
-                dashboardDevices.setEntries(deviceNames.toArray(new String[0]));
-            }
-            List<String> dashboardPrefs = Arrays.asList(
-                    "dashboard_cards_enabled",
-                    "pref_dashboard_widgets_order",
-                    "dashboard_widget_today_24h",
-                    "dashboard_widget_today_2columns",
-                    "dashboard_widget_today_legend",
-                    "dashboard_widget_today_hr_interval",
-                    "dashboard_widget_goals_2columns",
-                    "dashboard_widget_goals_legend",
-                    "dashboard_devices_all",
-                    "dashboard_devices_multiselect"
-            );
-            for (String dashboardPref : dashboardPrefs) {
-                pref = findPreference(dashboardPref);
-                if (pref != null) {
-                    pref.setOnPreferenceChangeListener((preference, autoExportEnabled) -> {
-                        sendDashboardConfigChangedIntent();
-                        return true;
-                    });
-                }
+            pref = findPreference("pref_category_dashboard");
+            if (pref != null) {
+                pref.setOnPreferenceClickListener(preference -> {
+                    Intent enableIntent = new Intent(requireContext(), DashboardPreferencesActivity.class);
+                    startActivity(enableIntent);
+                    return true;
+                });
             }
 
             final Preference theme = findPreference("pref_key_theme");
@@ -628,15 +602,6 @@ public class SettingsActivity extends AbstractSettingsActivityV2 {
         private void sendThemeChangeIntent() {
             Intent intent = new Intent();
             intent.setAction(GBApplication.ACTION_THEME_CHANGE);
-            LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(intent);
-        }
-
-        /**
-         * Signal dashboard that its config has changed
-         */
-        private void sendDashboardConfigChangedIntent() {
-            Intent intent = new Intent();
-            intent.setAction(DashboardFragment.ACTION_CONFIG_CHANGE);
             LocalBroadcastManager.getInstance(requireContext()).sendBroadcast(intent);
         }
     }
