@@ -205,12 +205,9 @@ public class DateTimeUtils {
      * @param days
      */
     public static int shiftDays(int time, int days) {
-        int newTime = time + ((24 * 3600) - 1) * days;
         Calendar day = Calendar.getInstance();
-        day.setTimeInMillis(newTime * 1000L);
-        day.set(Calendar.HOUR_OF_DAY, 0);
-        day.set(Calendar.MINUTE, 0);
-        day.set(Calendar.SECOND, 0);
+        day.setTimeInMillis(time * 1000L);
+        day.add(Calendar.DAY_OF_YEAR, days);
         return (int) (day.getTimeInMillis() / 1000);
     }
 
