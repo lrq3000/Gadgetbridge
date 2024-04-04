@@ -94,7 +94,8 @@ import nodomain.freeyourgadget.gadgetbridge.util.GBChangeLog;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 //TODO: extend AbstractGBActivity, but it requires actionbar that is not available
-public class ControlCenterv2 extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, GBActivity {
+public class ControlCenterv2 extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener, GBActivity {
     private static final Logger LOG = LoggerFactory.getLogger(ControlCenterv2.class);
     public static final int MENU_REFRESH_CODE = 1;
     public static final String ACTION_REQUEST_PERMISSIONS
@@ -124,20 +125,19 @@ public class ControlCenterv2 extends AppCompatActivity implements NavigationView
                 case GBApplication.ACTION_QUIT:
                     finish();
                     break;
+                case DeviceService.ACTION_REALTIME_SAMPLES:
+                    handleRealtimeSample(intent.getSerializableExtra(DeviceService.EXTRA_REALTIME_SAMPLE));
+                    break;
                 case ACTION_REQUEST_PERMISSIONS:
                     checkAndRequestPermissions();
                     break;
                 case ACTION_REQUEST_LOCATION_PERMISSIONS:
                     checkAndRequestLocationPermissions();
                     break;
-                case DeviceService.ACTION_REALTIME_SAMPLES:
-                    handleRealtimeSample(intent.getSerializableExtra(DeviceService.EXTRA_REALTIME_SAMPLE));
-                    break;
             }
         }
     };
     private boolean pesterWithPermissions = true;
-
     private ActivitySample currentHRSample;
 
     public ActivitySample getCurrentHRSample() {
@@ -158,8 +158,7 @@ public class ControlCenterv2 extends AppCompatActivity implements NavigationView
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         AbstractGBActivity.init(this, AbstractGBActivity.NO_ACTIONBAR);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -213,9 +212,9 @@ public class ControlCenterv2 extends AppCompatActivity implements NavigationView
         filterLocal.addAction(GBApplication.ACTION_LANGUAGE_CHANGE);
         filterLocal.addAction(GBApplication.ACTION_THEME_CHANGE);
         filterLocal.addAction(GBApplication.ACTION_QUIT);
+        filterLocal.addAction(DeviceService.ACTION_REALTIME_SAMPLES);
         filterLocal.addAction(ACTION_REQUEST_PERMISSIONS);
         filterLocal.addAction(ACTION_REQUEST_LOCATION_PERMISSIONS);
-        filterLocal.addAction(DeviceService.ACTION_REALTIME_SAMPLES);
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, filterLocal);
 
         /*

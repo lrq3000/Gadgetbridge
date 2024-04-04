@@ -64,9 +64,7 @@ public abstract class AbstractDashboardWidget extends Fragment {
     protected abstract void fillData();
 
     /**
-     * @param width Bitmap width in pixels        this.timeFrom = timeFrom;
-        this.timeTo = timeTo;
-
+     * @param width Bitmap width in pixels
      * @param barWidth Gauge bar width in pixels
      * @param filledColor Color of the filled part of the gauge
      * @param filledFactor Factor between 0 and 1 that determines the amount of the gauge that should be filled
