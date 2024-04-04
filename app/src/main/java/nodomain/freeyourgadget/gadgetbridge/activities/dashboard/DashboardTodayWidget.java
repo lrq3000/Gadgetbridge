@@ -202,11 +202,13 @@ public class DashboardTodayWidget extends AbstractDashboardWidget {
             textPaint.getTextBounds(hours.get(12), 0, hours.get(12).length(), textBounds);
             canvas.drawText(hours.get(12), width / 2f, clockMargin + clockStripesWidth + textBounds.height(), textPaint);
             textPaint.getTextBounds(hours.get(15), 0, hours.get(15).length(), textBounds);
-            canvas.drawText(hours.get(15), width - textBounds.width() / 2f, height / 2f + textBounds.height() / 2f, textPaint);
+            canvas.drawText(hours.get(15), (float) (width - Math.ceil(textBounds.width() / 2f)), height / 2f + textBounds.height() / 2f, textPaint);
             textPaint.getTextBounds(hours.get(18), 0, hours.get(18).length(), textBounds);
             canvas.drawText(hours.get(18), width / 2f, height - textBounds.height() / 2f, textPaint);
+            textPaint.setTextAlign(Paint.Align.LEFT);
             textPaint.getTextBounds(hours.get(21), 0, hours.get(21).length(), textBounds);
-            canvas.drawText(hours.get(21), textBounds.width() / 2f, height / 2f + textBounds.height() / 2f, textPaint);
+            canvas.drawText(hours.get(21), 1, height / 2f + textBounds.height() / 2f, textPaint);
+            textPaint.setTextAlign(Paint.Align.CENTER);
             textPaint.getTextBounds(hours.get(24), 0, hours.get(24).length(), textBounds);
             canvas.drawText(hours.get(24), width / 2f, textBounds.height(), textPaint);
         }
