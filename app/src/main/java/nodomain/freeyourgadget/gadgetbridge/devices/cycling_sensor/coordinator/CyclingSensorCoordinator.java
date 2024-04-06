@@ -19,26 +19,13 @@ import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDeviceCandidate;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.model.DeviceType;
+import nodomain.freeyourgadget.gadgetbridge.service.DeviceSupport;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.cycling_sensor.support.CyclingSensorSupport;
 
 public class CyclingSensorCoordinator extends AbstractBLEDeviceCoordinator {
     @Override
     protected void deleteDevice(@NonNull GBDevice gbDevice, @NonNull Device device, @NonNull DaoSession session) throws GBException {
 
-    }
-
-    @NonNull
-    @Override
-    public DeviceType getSupportedType(GBDeviceCandidate candidate) {
-        if(candidate.supportsService(CyclingSensorSupport.UUID_CYCLING_SENSOR_SERVICE)){
-            return getDeviceType();
-        }
-        return DeviceType.UNKNOWN;
-    }
-
-    @Override
-    public DeviceType getDeviceType() {
-        return DeviceType.CYCLING_SENSOR;
     }
 
     @Nullable
@@ -73,17 +60,17 @@ public class CyclingSensorCoordinator extends AbstractBLEDeviceCoordinator {
     }
 
     @Override
-    public boolean supportsScreenshots() {
+    public boolean supportsScreenshots(GBDevice device) {
         return false;
     }
 
     @Override
-    public int getAlarmSlotCount() {
+    public int getAlarmSlotCount(GBDevice device) {
         return 0;
     }
 
     @Override
-    public boolean supportsSmartWakeup(GBDevice device) {
+    public boolean supportsSmartWakeup(GBDevice device, int alarmPosition) {
         return false;
     }
 
@@ -93,7 +80,7 @@ public class CyclingSensorCoordinator extends AbstractBLEDeviceCoordinator {
     }
 
     @Override
-    public boolean supportsAppsManagement() {
+    public boolean supportsAppsManagement(GBDevice device) {
         return false;
     }
 
@@ -127,5 +114,16 @@ public class CyclingSensorCoordinator extends AbstractBLEDeviceCoordinator {
         return new int[]{
                 R.xml.devicesettings_cycling_sensor
         };
+    }
+
+    @NonNull
+    @Override
+    public Class<? extends DeviceSupport> getDeviceSupportClass() {
+        return CyclingSensorSupport.class;
+    }
+
+    @Override
+    public int getDeviceNameResource() {
+        return 0;
     }
 }

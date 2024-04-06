@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import com.github.mikephil.charting.charts.Chart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.data.LineData;
 
 import java.util.List;
 
@@ -20,9 +21,15 @@ import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
 
-public class CyclingDataFragment extends AbstractChartFragment{
+public class CyclingDataFragment extends AbstractChartFragment<CyclingDataFragment.CyclingChartsData>{
     private PieChart currentSpeedChart;
     private LineChart speedHistoryChart;
+
+    protected static class CyclingChartsData extends DefaultChartsData<LineData> {
+        public CyclingChartsData(LineData lineData, TimestampTranslation tsTranslation) {
+            super(lineData, new TemperatureChartFragment.dateFormatter(tsTranslation));
+        }
+    }
 
     @Override
     public String getTitle() {
@@ -30,7 +37,12 @@ public class CyclingDataFragment extends AbstractChartFragment{
     }
 
     @Override
-    protected ChartsData refreshInBackground(ChartsHost chartsHost, DBHandler db, GBDevice device) {
+    protected void init() {
+
+    }
+
+    @Override
+    protected CyclingChartsData refreshInBackground(ChartsHost chartsHost, DBHandler db, GBDevice device) {
         List<? extends ActivitySample> samples = getSamples(db, device);
         return null;
     }
@@ -40,8 +52,7 @@ public class CyclingDataFragment extends AbstractChartFragment{
 
     }
 
-    @Override
-    protected List<? extends ActivitySample> getSamples(DBHandler db, GBDevice device, int tsFrom, int tsTo) {
+    protected List<? extends ActivitySample> getSamples(DBHandler db, GBDevice device) {
         return null;
     }
 
@@ -51,7 +62,7 @@ public class CyclingDataFragment extends AbstractChartFragment{
     }
 
     @Override
-    protected void updateChartsnUIThread(ChartsData chartsData) {
+    protected void updateChartsnUIThread(CyclingChartsData chartsData) {
 
     }
 
