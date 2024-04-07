@@ -1,5 +1,3 @@
-import com.github.spotbugs.SpotBugsTask
-
 import java.nio.file.Files
 
 apply plugin: "com.android.application"
@@ -202,6 +200,9 @@ android {
             includeAndroidResources = true
         }
     }
+    buildFeatures {
+        aidl true
+    }
 }
 
 pmd {
@@ -317,8 +318,8 @@ task pmd(type: Pmd) {
     exclude "**/gen/**"
 
     reports {
-        xml.enabled = false
-        html.enabled = true
+        //xml.enabled = false
+        //html.enabled = true
         xml {
             destination file("$project.buildDir/reports/pmd/pmd.xml")
         }
@@ -336,19 +337,19 @@ sourceSets {
 }
 
 spotbugs {
-    toolVersion = "3.1.12"
+    toolVersion = "4.8.3"
     ignoreFailures = !ABORT_ON_CHECK_FAILURE
-    effort = "default"
-    reportLevel = "medium"
+    //effort = "default"
+    //reportLevel = "medium"
 }
 
-tasks.withType(SpotBugsTask) {
-    source = fileTree('src/main/java')
+spotbugsMain {
+    sourceDirs = fileTree('src/main/java')
     classes = files("${project.rootDir}/app/build/intermediates/javac/debug/classes")
     excludeFilter = new File("${project.rootDir}/config/findbugs/findbugs-filter.xml")
     reports {
-        xml.enabled = false
-        html.enabled = true
+        //xml.enabled = false
+        //html.enabled = true
         xml {
             destination file("$project.buildDir/reports/spotbugs/spotbugs-output.xml")
         }
