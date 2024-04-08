@@ -437,4 +437,5 @@ public class DeviceSettingsPreferenceConst {
     public static final String PREF_POWER_SAVING = "pref_key_power_saving";
     public static final String PREF_FORCE_CONNECTION_TYPE = "pref_force_connection_type";
     public static final String PREF_CYCLING_SENSOR_PERSISTENCE_INTERVAL = "pref_cycling_persistence_interval";
+    public static final String PREF_CYCLING_SENSOR_WHEEL_DIAMETER = "pref_cycling_wheel_diameter";
 }

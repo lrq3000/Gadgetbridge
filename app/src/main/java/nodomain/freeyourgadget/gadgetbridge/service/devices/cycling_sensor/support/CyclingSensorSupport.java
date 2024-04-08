@@ -37,22 +37,18 @@ import nodomain.freeyourgadget.gadgetbridge.service.btle.profiles.battery.Batter
 
 public class CyclingSensorSupport extends CyclingSensorBaseSupport {
     static class CyclingSpeedCadenceMeasurement {
-
-
         private static final int FLAG_REVOLUTION_DATA_PRESENT = 1 << 0;
         private static final int FLAG_CADENCE_DATA_PRESENT    = 1 << 1;
         public boolean revolutionDataPresent = false;
         public boolean cadenceDataPresent = false;
         public int revolutionCount;
         public int lastRevolutionTimeTicks;
-        public long lastRevolutionTimeEpoch;
         private int crankRevolutionCount;
         private int lastCrankRevolutionTimeTicks;
-        public long lastCrankRevolutionTimeEpoch;
 
-        public static CyclingSpeedCadenceMeasurement fromPayload(byte[] payload){
+        public static CyclingSpeedCadenceMeasurement fromPayload(byte[] payload) throws RuntimeException {
             if(payload.length < 7){
-                return null;
+                throw new RuntimeException("wrong payload length");
             }
 
             ByteBuffer buffer = ByteBuffer
@@ -97,10 +93,13 @@ public class CyclingSensorSupport extends CyclingSensorBaseSupport {
     private long persistenceInterval;
     private long nextPersistenceTimestamp = 0;
 
+    private float wheelCircumference;
+
     private Device databaseDevice;
     private User databaseUser;
 
     private CyclingSpeedCadenceMeasurement lastReportedMeasurement = null;
+    private long lastMeasurementTime = 0;
 
     private BluetoothGattCharacteristic batteryCharacteristic = null;
 
@@ -111,18 +110,22 @@ public class CyclingSensorSupport extends CyclingSensorBaseSupport {
         addSupportedService(BatteryInfoProfile.SERVICE_UUID);
     }
 
-    private int getPersistenceInterval(){
-        SharedPreferences deviceSpecificPrefs = GBApplication.getDeviceSpecificSharedPrefs(getDevice().getAddress());
-        return deviceSpecificPrefs.getInt(DeviceSettingsPreferenceConst.PREF_CYCLING_SENSOR_PERSISTENCE_INTERVAL, 60);
-    }
-
     @Override
     public void onSendConfiguration(String config) {
         switch (config){
             case DeviceSettingsPreferenceConst.PREF_CYCLING_SENSOR_PERSISTENCE_INTERVAL:
-                persistenceInterval = getPersistenceInterval();
+                loadConfiguration();
                 break;
         }
+    }
+
+    private void loadConfiguration(){
+        SharedPreferences deviceSpecificPrefs = GBApplication.getDeviceSpecificSharedPrefs(getDevice().getAddress());
+        persistenceInterval = deviceSpecificPrefs.getInt(DeviceSettingsPreferenceConst.PREF_CYCLING_SENSOR_PERSISTENCE_INTERVAL, 60);
+        nextPersistenceTimestamp = 0;
+        
+        float wheelDiameter = deviceSpecificPrefs.getFloat(DeviceSettingsPreferenceConst.PREF_CYCLING_SENSOR_WHEEL_DIAMETER, 29);
+        wheelCircumference = (float)(wheelDiameter * 2.54 * Math.PI) / 100;
     }
 
     @Override
@@ -141,7 +144,7 @@ public class CyclingSensorSupport extends CyclingSensorBaseSupport {
             builder.add(new ReadAction(batteryCharacteristic));
         }
 
-        persistenceInterval = getPersistenceInterval();
+        loadConfiguration();
 
         gbDevice.setFirmwareVersion("1.0.0");
 
@@ -164,7 +167,21 @@ public class CyclingSensorSupport extends CyclingSensorBaseSupport {
             return;
         }
 
-        CyclingSpeedCadenceMeasurement measurement = CyclingSpeedCadenceMeasurement.fromPayload(value);
+        CyclingSpeedCadenceMeasurement measurement = null;
+
+        try {
+            measurement = CyclingSpeedCadenceMeasurement.fromPayload(value);
+        }catch (RuntimeException e){
+        }
+
+        if(measurement == null){
+            return;
+        }
+
+        if(!measurement.revolutionDataPresent){
+            return;
+        }
+
         handleCyclingSpeedMeasurement(measurement);
     }
 
@@ -173,34 +190,56 @@ public class CyclingSensorSupport extends CyclingSensorBaseSupport {
 
         long now = System.currentTimeMillis();
 
+        Float speed = null;
+
+        long lastMeasurementDelta = (now - lastMeasurementTime);
+
+        if(lastMeasurementDelta <= 30_000){
+            int ticksPassed = currentMeasurement.lastRevolutionTimeTicks - lastReportedMeasurement.lastRevolutionTimeTicks;
+            // every second is subdivided in 1024 ticks
+            int millisDelta = ticksPassed * (1000 / 1024);
+
+            int revolutionsDelta = currentMeasurement.revolutionCount - lastReportedMeasurement.revolutionCount;
+
+            float revolutionsPerSecond = revolutionsDelta * (1000 / millisDelta);
+
+            speed = revolutionsPerSecond * wheelCircumference;
+        }
+
+        lastReportedMeasurement = currentMeasurement;
+        lastMeasurementTime = now;
+
+        if(now < nextPersistenceTimestamp){
+            // too early
+            return;
+        }
+
+        nextPersistenceTimestamp = now + persistenceInterval;
+
+        CyclingSensorActivitySample sample = new CyclingSensorActivitySample();
+
+        if (currentMeasurement.revolutionDataPresent) {
+            sample.setRevolutionCount(currentMeasurement.revolutionCount);
+            sample.setSteps(currentMeasurement.revolutionCount);
+            sample.setWheelCircumference(wheelCircumference);
+            sample.setSpeed(speed);
+        }
+
+        sample.setTimestamp((int)(now / 1000));
+        sample.setDevice(databaseDevice);
+        sample.setUser(databaseUser);
+        sample.setRawKind(TYPE_CYCLING);
+
+        Intent liveIntent = new Intent(DeviceService.ACTION_REALTIME_SAMPLES);
+        liveIntent.putExtra(DeviceService.EXTRA_REALTIME_SAMPLE, sample);
+        LocalBroadcastManager.getInstance(getContext())
+                .sendBroadcast(liveIntent);
 
         try(DBHandler handler = GBApplication.acquireDB()) {
             DaoSession session = handler.getDaoSession();
 
-            CyclingSensorActivitySample sample = new CyclingSensorActivitySample();
             CyclingSensorActivitySampleProvider sampleProvider =
                     new CyclingSensorActivitySampleProvider(getDevice(), session);
-
-            boolean persistSample = currentMeasurement.revolutionDataPresent || currentMeasurement.cadenceDataPresent;
-
-            if(!persistSample){
-                return;
-            }
-
-            if (currentMeasurement.revolutionDataPresent) {
-                sample.setRevolutionCount(currentMeasurement.revolutionCount);
-                sample.setSteps(currentMeasurement.revolutionCount);
-            }
-
-            sample.setTimestamp((int)(now / 1000));
-            sample.setDevice(databaseDevice);
-            sample.setUser(databaseUser);
-            sample.setRawKind(TYPE_CYCLING);
-
-            Intent liveIntent = new Intent(DeviceService.ACTION_REALTIME_SAMPLES);
-            liveIntent.putExtra(DeviceService.EXTRA_REALTIME_SAMPLE, sample);
-            LocalBroadcastManager.getInstance(getContext())
-                            .sendBroadcast(liveIntent);
 
             sampleProvider.addGBActivitySample(sample);
         } catch (Exception e) {

@@ -3,6 +3,14 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <EditTextPreference
+        android:defaultValue="29"
+        android:inputType="number"
+        android:title="Wheel diameter"
+        android:summary="Wheel diameter in inches. Typically 29, 27,5 or 26."
+        android:icon="@drawable/ic_activity_biking"
+        android:key="pref_cycling_wheel_diameter" />
+
+    <EditTextPreference
         android:defaultValue="60"
         android:inputType="number"
         android:title="Persistence interval"

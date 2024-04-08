@@ -632,6 +632,7 @@ public class GBDaoGenerator {
         addCommonActivitySampleProperties("AbstractActivitySample", activitySample, user, device);
 
         activitySample.addIntProperty("RevolutionCount");
+        activitySample.addFloatProperty("Distance");
         activitySample.addFloatProperty("Speed");
         return activitySample;
     }

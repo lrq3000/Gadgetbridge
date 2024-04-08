@@ -24,7 +24,7 @@ public class CyclingSensorActivitySampleProvider extends AbstractSampleProvider<
     @Nullable
     @Override
     protected Property getRawKindSampleProperty() {
-        return CyclingSensorActivitySampleDao.Properties.RevolutionCount;
+        return CyclingSensorActivitySampleDao.Properties.Speed;
     }
 
     @NonNull
